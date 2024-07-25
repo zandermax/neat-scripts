@@ -1,9 +1,9 @@
 # Pull all changes in all git repos in a directory
-pull-and-build-all() {
+pull-and-build-all-npm() {
 	# Initialize an empty string to store directories with errors
 	error_dirs=""
 	# Loop through all subdirectories
-	for d in */; do
+	for d in *-npm-*/; do
 		if [ -d "$d/.git" ]; then # Check if the directory is a Git repository
 			if [ "$(cd "$d" && git rev-parse --abbrev-ref HEAD)" != "master" ]; then
 				echo "Not on master branch in $d, skipping"
@@ -27,7 +27,7 @@ pull-and-build-all() {
 	if [ -n "$error_dirs" ]; then
 		echo -e "Errors occurred in the following directories:\n$error_dirs"
 	else
-		echo "Git pull successful in all directories."
+		echo "Pull and build successful in all directories."
 	fi
 
 	# Clean up the temporary error file
