@@ -30,13 +30,17 @@ runGitCommandInDirs() {
 pullAll() {
 	# Initialize an empty string to store directories with errors
 	error_dirs=""
-
 	# Loop through all subdirectories
 	for d in */; do
 		if [ -d "$d/.git" ]; then # Check if the directory is a Git repository
+			# check if on master branch
+			if [ "$(cd "$d" && git rev-parse --abbrev-ref HEAD)" != "master" ]; then
+				echo "Not on master branch in $d, skipping"
+				continue
+			fi
+			# Stash any changes, attempt to pull, redirecting errors to a temp file
 			echo "Pulling in $d"
-			# Attempt to pull, redirecting errors to a temp file
-			if ! (cd "$d" && git pull) 2>/tmp/error$$; then
+			if ! (cd "$d" && git stash && git pull) 2>/tmp/error$$; then
 				echo "Error in $d"
 				# Append the directory and error message to the error_dirs string
 				error_dirs+="$d: $(cat /tmp/error$$)\n"
