@@ -12,7 +12,7 @@ alias gpl='git pull'
 # Run command in all git repos in a directory with changes
 # Parameters:
 # $1: Command to run
-runGitCommandInDirs() {
+run-git-command-in-dirs() {
 	local cmd="$1" # Command to run
 	for d in */; do
 		(
@@ -27,7 +27,7 @@ runGitCommandInDirs() {
 }
 
 # Pull all changes in all git repos in a directory
-pullAll() {
+pull-all() {
 	# Initialize an empty string to store directories with errors
 	error_dirs=""
 	# Loop through all subdirectories
@@ -60,11 +60,11 @@ pullAll() {
 }
 
 # Shows all repos in a directory that have useful changes
-alias rgits="runGitCommandInDirs 'git status -s | grep -v \".DS_Store\"'"
+alias rgits="run-git-command-in-dirs 'git status -s | grep -v \".DS_Store\"'"
 
 # Commit all changes in all git repos in a directory, with the same
-commitall() {
-	runGitCommandInDirs "git commit -m \"$1\""
+commit-all() {
+	run-git-command-in-dirs "git commit -m \"$1\""
 }
 
 rename-branch() {
@@ -80,4 +80,4 @@ rename-branch() {
 	git push --set-upstream origin "$1" --no-verify
 }
 
-alias pushnew='git push --set-upstream origin $(git rev-parse --abbrev-ref HEAD)'
+alias push-new-branch='git push --set-upstream origin $(git rev-parse --abbrev-ref HEAD)'
