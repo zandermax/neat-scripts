@@ -1,4 +1,7 @@
-# Pull all changes in all git repos in a directory
+alias ybs="yarn install && yarn build && yarn start"
+alias yb="yarn install && yarn build"
+alias ys="yarn start"
+
 build-all-npm() {
 	# Initialize an empty string to store directories with errors
 	error_dirs=""
@@ -6,7 +9,7 @@ build-all-npm() {
 	for d in *-npm-*/; do
 		echo "Running yarn install and yarn build in $d"
 		# Attempt to pull, redirecting errors to a temp file
-		if ! (cd "$d" && yarn install && yarn build) 2>/tmp/error$$; then
+		if ! (cd "$d" && yb) 2>/tmp/error$$; then
 			echo "Error in $d"
 			# Append the directory and error message to the error_dirs string
 			error_dirs+="$d: $(cat /tmp/error$$)\n"
