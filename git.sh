@@ -67,4 +67,17 @@ commitall() {
 	runGitCommandInDirs "git commit -m \"$1\""
 }
 
+rename-branch() {
+	# Get current branch name
+	current_branch=$(git rev-parse --abbrev-ref HEAD)
+	# Rename branch
+	git branch -m "$current_branch" "$1"
+	# Check if remote branch exists, if so delete it
+	if git show-ref --verify --quiet "refs/remotes/origin/$current_branch"; then
+		git push origin --delete "$current_branch" --no-verify
+	fi
+	# Push new branch and set upstream
+	git push --set-upstream origin "$1" --no-verify
+}
+
 alias pushnew='git push --set-upstream origin $(git rev-parse --abbrev-ref HEAD)'
