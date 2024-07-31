@@ -45,6 +45,7 @@ pull-all() {
 				# Append the directory and error message to the error_dirs string
 				error_dirs+="$d: $(cat /tmp/error$$)\n"
 			fi
+			echo ""
 		fi
 	done
 
@@ -53,6 +54,7 @@ pull-all() {
 		echo -e "Errors occurred in the following directories:\n$error_dirs"
 	else
 		echo "Git pull successful in all directories."
+		echo ""
 	fi
 
 	# Clean up the temporary error file

@@ -8,12 +8,13 @@ build-all-npm() {
 	# Loop through all subdirectories
 	for d in *-npm-*/; do
 		echo "Running yarn install and yarn build in $d"
-		# Attempt to pull, redirecting errors to a temp file
+		# Redirect errors to a temp file
 		if ! (cd "$d" && yb) 2>/tmp/error$$; then
 			echo "Error in $d"
 			# Append the directory and error message to the error_dirs string
 			error_dirs+="$d: $(cat /tmp/error$$)\n"
 		fi
+		echo ""
 	done
 
 	# Check if there were any errors
