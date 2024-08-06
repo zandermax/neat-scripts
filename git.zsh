@@ -81,8 +81,26 @@ commit_all() {
 # Finds all branches with unpushed or unpublished commits in all subdirectories
 # Parameters:
 # $1: Branch prefix to search for (optional)
+# Options:
+# --publish: Publishes all unpublished branches found
 find_unpushed() {
-	branch_prefix=$1
+	branch_prefix=""
+	publish_unpublished=false
+
+	# Parse arguments
+	while [[ $# -gt 0 ]]; do
+		case $1 in
+		--publish)
+			publish_unpublished=true
+			shift
+			;;
+		*)
+			branch_prefix=$1
+			shift
+			;;
+		esac
+	done
+
 	found_dirs_unpublished=""
 	found_dirs_uncommitted=""
 
@@ -106,6 +124,10 @@ find_unpushed() {
 						elif ! git show-ref --quiet --verify "refs/remotes/origin/$branch"; then
 							echo "Branch '$branch' is unpublished in: $dir"
 							found_dirs_unpublished+="$dir\n"
+							if [ "$publish_unpublished" = true ]; then
+								echo "Publishing branch '$branch' to remote in: $dir"
+								git push -u origin "$branch"
+							fi
 							break
 						fi
 					fi
@@ -118,6 +140,10 @@ find_unpushed() {
 				elif ! git show-ref --quiet --verify "refs/remotes/origin/$(git rev-parse --abbrev-ref HEAD)"; then
 					echo "Branch is unpublished in: $dir"
 					found_dirs_unpublished+="$dir\n"
+					if [ "$publish_unpublished" = true ]; then
+						echo "Publishing branch to remote in: $dir"
+						git push -u origin "$(git rev-parse --abbrev-ref HEAD)"
+					fi
 				fi
 			fi
 
@@ -126,18 +152,14 @@ find_unpushed() {
 	done
 
 	echo
-	echo "---------------------------------"
-	echo
 	# Output all directories where branches with unpushed or unpublished commits were found
+	if [ -n "$found_dirs_uncommitted" ]; then
+		echo -e "\nBranches with unpushed commits were found in the following directories:\n$found_dirs_uncommitted"
+	fi
 	if [ -n "$found_dirs_unpublished" ]; then
-		echo -e "\nBranches with unpublished commits were found in the following directories:\n\n$found_dirs_unpublished"
-		echo
-		echo -e "Total unpublished: $(echo -e "$found_dirs_unpublished" | wc -l)"
-	elif [ -n "$found_dirs_uncommitted" ]; then
-		echo -e "\nBranches with uncommitted changes were found in the following directories:\n\n$found_dirs_uncommitted"
-		echo
-		echo -e "Total uncommitted: $(echo -e "$found_dirs_uncommitted" | wc -l)"
-	else
+		echo -e "\nBranches with unpublished commits were found in the following directories:\n$found_dirs_unpublished"
+	fi
+	if [ -z "$found_dirs_uncommitted" ] && [ -z "$found_dirs_unpublished" ]; then
 		echo "No branches with unpushed or unpublished commits were found in any directories."
 	fi
 }
