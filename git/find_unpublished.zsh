@@ -81,21 +81,35 @@ find_unpushed() {
 		fi
 	done
 
-	echo
+	echo "Finished checking all directories."
+	echo "---------------------------------"
+
 	# Output all directories where branches with unpushed or unpublished commits were found
+	# Define color codes
+	RED='\033[0;31m'
+	GREEN='\033[0;32m'
+	YELLOW='\033[0;33m'
+	BLUE='\033[0;34m'
+	NC='\033[0m' # No Color
+
+	# Define emojis
+	INFO_EMOJI="ℹ️"
+	SUCCESS_EMOJI="✅"
+	ERROR_EMOJI="❗️"
+	echo
 	if [ -n "$found_dirs_uncommitted" ]; then
-		echo -e "\nBranches with unpushed commits were found in the following directories:\n$found_dirs_uncommitted"
+		echo -e "${YELLOW}${INFO_EMOJI} Branches with unpushed commits were found in the following directories:${NC}\n$found_dirs_uncommitted"
 	fi
 	if [ -n "$found_dirs_unpublished" ]; then
-		echo -e "\nBranches with unpublished commits were found in the following directories:\n$found_dirs_unpublished"
+		echo -e "${BLUE}${INFO_EMOJI} Branches with unpublished commits were found in the following directories:${NC}\n$found_dirs_unpublished"
 	fi
 	if [ -n "$published_dirs" ]; then
-		echo -e "\nBranches were successfully published in the following directories:\n$published_dirs"
+		echo -e "${GREEN}${SUCCESS_EMOJI} Branches were successfully published in the following directories:${NC}\n$published_dirs"
 	fi
 	if [ -n "$error_dirs" ]; then
-		echo -e "\nErrors occurred while publishing branches in the following directories:\n$error_dirs"
+		echo -e "${RED}${ERROR_EMOJI} Errors occurred while publishing branches in the following directories:${NC}\n$error_dirs"
 	fi
 	if [ -z "$found_dirs_uncommitted" ] && [ -z "$found_dirs_unpublished" ]; then
-		echo "No branches with unpushed or unpublished commits were found in any directories."
+		echo -e "${GREEN}${SUCCESS_EMOJI} No branches with unpushed or unpublished commits were found in any directories.${NC}"
 	fi
 }
