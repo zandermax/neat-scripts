@@ -12,7 +12,7 @@ alias gpl='git pull'
 # Run command in all git repos in a directory with changes
 # Parameters:
 # $1: Command to run
-run_git_command_in_dirs() {
+run_command_in_repos() {
 	local cmd="$1" # Command to run
 	for d in */; do
 		(
@@ -75,7 +75,7 @@ alias rgits="run-git-command-in-dirs 'git status -s | grep -v \".DS_Store\"'"
 
 # Commit all changes in all git repos in a directory, with the same
 commit_all() {
-	run_git_command_in_dirs "git commit -m \"$1\""
+	run_command_in_repos "git commit -m \"$1\""
 }
 
 # Finds all branches with unpushed or unpublished commits in all subdirectories
