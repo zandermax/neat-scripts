@@ -12,7 +12,7 @@ alias gpl='git pull'
 # Run command in all git repos in a directory with changes
 # Parameters:
 # $1: Command to run
-run-git-command-in-dirs() {
+run_git_command_in_dirs() {
 	local cmd="$1" # Command to run
 	for d in */; do
 		(
@@ -26,8 +26,17 @@ run-git-command-in-dirs() {
 	done
 }
 
+fetch_all() {
+	for d in */; do
+		if [ -d "$d/.git" ]; then
+			echo "Fetching in $d"
+			(cd "$d" && git fetch)
+		fi
+	done
+}
+
 # Pull all changes in all git repos in a directory
-pull-all() {
+pull_all() {
 	# Initialize an empty string to store directories with errors
 	error_dirs=""
 	# Loop through all subdirectories
@@ -65,11 +74,75 @@ pull-all() {
 alias rgits="run-git-command-in-dirs 'git status -s | grep -v \".DS_Store\"'"
 
 # Commit all changes in all git repos in a directory, with the same
-commit-all() {
-	run-git-command-in-dirs "git commit -m \"$1\""
+commit_all() {
+	run_git_command_in_dirs "git commit -m \"$1\""
 }
 
-rename-branch() {
+# Finds all branches with unpushed or unpublished commits in all subdirectories
+# Parameters:
+# $1: Branch prefix to search for (optional)
+find_unpushed() {
+	branch_prefix=$1
+	found_dirs_unpublished=""
+	found_dirs_uncommitted=""
+
+	# Loop through each subdirectory
+	for dir in */; do
+		if [ -d "$dir/.git" ]; then
+			echo
+			echo "Checking $dir"
+			cd "$dir" || continue
+
+			if [ -n "$branch_prefix" ]; then
+				# Check if any branch starting with the given prefix has unpushed or unpublished commits
+				for branch in $(git branch --list "$branch_prefix*"); do
+					# Filter out the case where branch is exactly '*'
+					if [ "$branch" != "*" ]; then
+						echo "Checking branch $branch"
+						if git status -uno | grep -q "Your branch is ahead of"; then
+							echo "Branch '$branch' with unpushed commits found in: $dir"
+							found_dirs_uncommitted+="$dir\n"
+							break
+						elif ! git show-ref --quiet --verify "refs/remotes/origin/$branch"; then
+							echo "Branch '$branch' is unpublished in: $dir"
+							found_dirs_unpublished+="$dir\n"
+							break
+						fi
+					fi
+				done
+			else
+				# Check if the current branch has unpushed or unpublished commits
+				if git status -uno | grep -q "Your branch is ahead of"; then
+					echo "Branch with unpushed commits found in: $dir"
+					found_dirs_uncommitted+="$dir\n"
+				elif ! git show-ref --quiet --verify "refs/remotes/origin/$(git rev-parse --abbrev-ref HEAD)"; then
+					echo "Branch is unpublished in: $dir"
+					found_dirs_unpublished+="$dir\n"
+				fi
+			fi
+
+			cd - >/dev/null || exit
+		fi
+	done
+
+	echo
+	echo "---------------------------------"
+	echo
+	# Output all directories where branches with unpushed or unpublished commits were found
+	if [ -n "$found_dirs_unpublished" ]; then
+		echo -e "\nBranches with unpublished commits were found in the following directories:\n\n$found_dirs_unpublished"
+		echo
+		echo -e "Total unpublished: $(echo -e "$found_dirs_unpublished" | wc -l)"
+	elif [ -n "$found_dirs_uncommitted" ]; then
+		echo -e "\nBranches with uncommitted changes were found in the following directories:\n\n$found_dirs_uncommitted"
+		echo
+		echo -e "Total uncommitted: $(echo -e "$found_dirs_uncommitted" | wc -l)"
+	else
+		echo "No branches with unpushed or unpublished commits were found in any directories."
+	fi
+}
+
+rename_branch() {
 	# Get current branch name
 	current_branch=$(git rev-parse --abbrev-ref HEAD)
 	# Rename branch
