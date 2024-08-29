@@ -1,17 +1,30 @@
-# Run command in all git repos in a directory with changes
+# Run command in all top-level git repos in a directory
 # Parameters:
 # $1: Command to run
+# Available variables:
+# - {repo_dir}: The directory of the repository
 run_command_in_repos() {
 	local cmd="$1" # Command to run
-	for d in */; do
-		(
-			cd "$d" && git status -s | grep -v ".DS_Store" >/dev/null
-			if [ $? -eq 0 ]; then
-				echo "In $d"
-				eval "$cmd"
-				echo ""
-			fi
-		)
+
+	# Check if a command is provided
+	if [ -z "$cmd" ]; then
+		echo "Usage: run_command_in_repos <command>"
+		return 1
+	fi
+
+	# Iterate over all directories in the current directory
+	for dir in */; do
+		# Check if the directory contains a .git directory
+		if [ -d "$dir/.git" ]; then
+			#  Convert to absolute path
+			repo_dir="$(cd "$dir" && pwd)"
+			printf "Running in %s\n" "$repo_dir"
+			(
+				cd "$repo_dir" || continue
+				# Replace {repo_dir} in the command with the actual directory
+				eval "${cmd//\{repo_dir\}/$repo_dir}"
+			)
+		fi
 	done
 }
 
@@ -57,12 +70,4 @@ pull_all() {
 
 	# Clean up the temporary error file
 	rm -f /tmp/error$$
-}
-
-# Shows all repos in a directory that have useful changes
-alias rgits="run-git-command-in-dirs 'git status -s | grep -v \".DS_Store\"'"
-
-# Commit all changes in all git repos in a directory, with the same
-commit_all() {
-	run_command_in_repos "git commit -m \"$1\""
 }
