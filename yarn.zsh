@@ -2,6 +2,11 @@ alias ybs="yarn install && yarn build && yarn start"
 alias yb="yarn install && yarn build"
 alias ys="yarn start"
 alias yt="yarn test"
+alias yr="yarn run"
+
+#  Special stuff
+alias find-unused="rev-dep entry-points --exclude '**/pages/**' '**/*.spec.*' '*gulpfile*' '*.config.*' '*jest*' 'server.js'"
+alias find-where-used="rev-dep resolve"
 
 build-all-npm() {
 	# Initialize an empty string to store directories with errors
