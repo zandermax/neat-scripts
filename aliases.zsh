@@ -1,3 +1,4 @@
+# ----- DIR -----
 alias dir="eza \
 --git \
 --git-repos \
@@ -5,5 +6,12 @@ alias dir="eza \
 --icons=always \
 --no-user \
 -H \
--l \
+--long \
 "
+
+alias dira="dir --all"
+alias dirc="dir --created"
+alias dirtree="dir --tree --level=3"
+
+# ----- OTHER -----
+alias c="clear"
