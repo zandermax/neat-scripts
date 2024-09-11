@@ -3,6 +3,7 @@
 # General git aliases
 alias g='git'
 alias gs='git status'
+alias gf='git fetch'
 alias ga='git add'
 alias gc='git commit'
 alias gcm='git commit -m'
