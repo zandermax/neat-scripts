@@ -8,12 +8,16 @@ alias yr="yarn run"
 alias find-unused="rev-dep entry-points --exclude '**/pages/**' '**/*.spec.*' '*gulpfile*' '*.config.*' '*jest*' 'server.js'"
 alias find-where-used="rev-dep resolve"
 
-build-all-npm() {
+build_all_npm() {
 	# Initialize an empty string to store directories with errors
 	error_dirs=""
 	# Loop through all subdirectories
 	for d in *-npm-*/; do
 		echo "Running yarn install and yarn build in $d"
+		if [ -d "$d/node_modules" ]; then
+			echo "Deleting node_modules in $d"
+			rm -rf "$d/node_modules"
+		fi
 		# Redirect errors to a temp file
 		if ! (cd "$d" && yb) 2>/tmp/error$$; then
 			echo "Error in $d"
