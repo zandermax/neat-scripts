@@ -1,5 +1,6 @@
 alias ybs="yarn install && yarn build && yarn start"
 alias yb="yarn install && yarn build"
+alias ybw="yb --watch"
 alias ys="yarn start"
 alias yt="yarn test"
 alias yr="yarn run"
@@ -36,4 +37,18 @@ build_all_npm() {
 
 	# Clean up the temporary error file
 	rm -f /tmp/error$$
+}
+
+# Runs yarn clean, if that fails, cleans manually
+yarn_clean() {
+	if ! yarn clean; then
+		echo "Cleaning manually"
+		rm -rf node_modules
+		rm -rf dist
+		rm -rf dist-stories
+		rm -rf .cache
+		rm -rf .next
+		rm -rf .yarn
+		rm -f yarn.lock
+	fi
 }
