@@ -39,14 +39,20 @@ fetch_all() {
 
 # Pull all changes in all git repos in a directory
 pull_all() {
-	# Initialize an empty string to store directories with errors
+	# Initialize variables to store directories with errors and updated repos
 	error_dirs=""
+	updated_count=0
+	declare -A not_on_master=()
+
 	# Loop through all subdirectories
 	for d in */; do
 		if [ -d "$d/.git" ]; then # Check if the directory is a Git repository
-			# check if on master branch
-			if [ "$(cd "$d" && git rev-parse --abbrev-ref HEAD)" != "master" ]; then
+			# Get the current branch name
+			current_branch=$(cd "$d" && git rev-parse --abbrev-ref HEAD)
+			# Check if on master branch
+			if [ "$current_branch" != "master" ]; then
 				echo "Not on master branch in $d, skipping"
+				not_on_master["$d"]="$current_branch"
 				continue
 			fi
 			# Stash any changes, attempt to pull, redirecting errors to a temp file
@@ -55,18 +61,28 @@ pull_all() {
 				echo "Error in $d"
 				# Append the directory and error message to the error_dirs string
 				error_dirs+="$d: $(cat /tmp/error$$)\n"
+			else
+				updated_count=$((updated_count + 1))
 			fi
 			echo ""
 		fi
 	done
 
-	# Check if there were any errors
+	# Prettified output
+	echo "==================== Summary ===================="
+	echo "Repositories updated: $updated_count"
+	if [ ${#not_on_master[@]} -ne 0 ]; then
+		echo "Repositories not on master branch:"
+		for repo in "${!not_on_master[@]}"; do
+			echo "  - $repo (branch: ${not_on_master[$repo]})"
+		done
+	fi
 	if [ -n "$error_dirs" ]; then
 		echo -e "Errors occurred in the following directories:\n$error_dirs"
 	else
 		echo "Git pull successful in all directories."
-		echo ""
 	fi
+	echo "================================================="
 
 	# Clean up the temporary error file
 	rm -f /tmp/error$$
