@@ -12,6 +12,3 @@ alias dir="eza \
 alias dira="dir --all"
 alias dirc="dir --created"
 alias dirtree="dir --tree --level=3 --git-ignore"
-
-# ----- OTHER -----
-alias c="clear"
