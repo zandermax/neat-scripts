@@ -20,7 +20,7 @@ push() {
 	if [ "$current_branch" = "master" ] && [ "$allow_master" = false ]; then
 		echo "$stars"
 		echo "$stars"
-		echo "Error: You are on the master branch. Set --allow-master=true to allow pushing changes."
+		echo "Error: You are on the master branch. Use --allow-master to allow pushing changes."
 		echo "$stars"
 		echo "$stars"
 		return 1
