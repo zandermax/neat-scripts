@@ -9,6 +9,7 @@ alias gc='git commit'
 alias gcm='git commit -m'
 alias gp='git push'
 alias gpl='git pull'
+alias gpf='git push --force-with-lease'
 
 alias push-new-branch='git push --set-upstream origin $(git rev-parse --abbrev-ref HEAD)'
 
@@ -32,14 +33,31 @@ git_nodefiles_from_branch() {
 git_sync() {
 	# Check for parameter
 	if [ -z "$1" ]; then
-		echo "Usage: git_sync <branch>"
+		echo "Usage: git_sync <branch> [--no-switch] [--stash-message <message>]"
 		return 1
 	fi
+
+	#  Parameter switches: --no-switch, --stash-message
+	for param in "$@"; do
+		case $param in
+		--no-switch)
+			no_switch=true
+			shift
+			;;
+		--stash-message)
+			stash_message="$2"
+			shift 2
+			;;
+		esac
+	done
 
 	#  check if there are any changes
 	if ! git diff-index --quiet HEAD --; then
 		echo "There are changes in the working directory. Stashing changes before sync."
-		git stash -m "Stashing changes before sync"
+		if [ -z "$stash_message" ]; then
+			stash_message="Stashing changes before sync"
+		fi
+		git stash -m "$stash_message"
 		stashed_changes=true
 	fi
 
@@ -47,11 +65,14 @@ git_sync() {
 	git fetch
 	git pull
 
-	git switch -
-	git merge "$1"
+	if [ "$no_switch" != true ]; then
+		git switch -
+		git merge "$1"
 
-	if [ "$stashed_changes" = true ]; then
-		git stash apply
+		if [ "$stashed_changes" = true ]; then
+			git stash apply
+		fi
+
 	fi
 }
 
@@ -81,16 +102,16 @@ git_squash_commits() {
 	fi
 	commits_to_squash=$1
 	git rebase -i HEAD~$commits_to_squash
-	git push --force-with-lease
 }
 
 git_squash_since_branch() {
-	#  Check for parameter, or if is is -m
-	if [ -z "$1" ] || [ "$1" = "-m" ]; then
+	#  Check for parameter
+	if [ -z "$1" ]; then
 		echo "Usage: git_squash_since_branch <branch> [-m <message>]"
 		return 1
 	fi
 
+	git_sync "$1"
 	git reset --hard $(git merge-base HEAD $1)
 	git merge --squash HEAD@{1}
 
@@ -102,3 +123,30 @@ git_squash_since_branch() {
 		git commit
 	fi
 }
+
+checkout_branch_with_prefix() {
+	prefix=$1
+	echo "Checking out branch with prefix $prefix"
+	# Command to check for branches with the given prefix and switch to the branch if it exists
+	branch=$(git branch --list "$prefix*" | head -n 1)
+	if [ -n "$branch" ]; then
+		branch_name=$(echo "$branch" | sed 's/^[* ]*//')
+		git checkout "$branch_name"
+	else
+		echo "No branch found with prefix $prefix"
+	fi
+}
+
+squish() {
+	# Get first commit message on the branch since master
+	first_commit_message=$(git log --pretty=format:%s $(git merge-base HEAD master)..HEAD | tail -n 1)
+	git_squash_since_branch master -m "$first_commit_message"
+	gpf
+}
+
+#  Function aliases
+
+alias fix-commit='git_fix_last_commit'
+alias squash-branch='git_squash_since_branch'
+alias squash='git_squash_commits'
+alias git-node='git_nodefiles_from_branch'

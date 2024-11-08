@@ -24,6 +24,7 @@ run_command_in_repos() {
 				# Replace {repo_dir} in the command with the actual directory
 				eval "${cmd//\{repo_dir\}/$repo_dir}"
 			)
+			echo ""
 		fi
 	done
 }
@@ -51,7 +52,9 @@ pull_all() {
 			current_branch=$(cd "$d" && git rev-parse --abbrev-ref HEAD)
 			# Check if on master branch
 			if [ "$current_branch" != "master" ]; then
-				echo "Not on master branch in $d, skipping"
+				echo "$d is on branch $current_branch"
+				echo "Skipping $d"
+				echo ""
 				not_on_master["$d"]="$current_branch"
 				continue
 			fi
@@ -60,7 +63,7 @@ pull_all() {
 			if ! (cd "$d" && git stash && git pull) 2>/tmp/error$$; then
 				echo "Error in $d"
 				# Append the directory and error message to the error_dirs string
-				error_dirs+="$d: $(cat /tmp/error$$)\n"
+				error_dirs+="$d: $(cat /tmp/error$$)\n\n"
 			else
 				updated_count=$((updated_count + 1))
 			fi
@@ -71,12 +74,13 @@ pull_all() {
 	# Prettified output
 	echo "==================== Summary ===================="
 	echo "Repositories updated: $updated_count"
-	if [ ${#not_on_master[@]} -ne 0 ]; then
-		echo "Repositories not on master branch:"
-		for repo in "${!not_on_master[@]}"; do
-			echo "  - $repo (branch: ${not_on_master[$repo]})"
-		done
-	fi
+	# TODO this is not working, gets a "bad substitution" error
+	# if [ ${#not_on_master[@]} -ne 0 ]; then
+	# 	echo "Repositories not on master branch:"
+	# 	for repo in "${!not_on_master[@]}"; do
+	# 		echo "  - $repo (branch: ${not_on_master[$repo]})"
+	# 	done
+	# fi
 	if [ -n "$error_dirs" ]; then
 		echo -e "Errors occurred in the following directories:\n$error_dirs"
 	else
