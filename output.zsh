@@ -1,5 +1,5 @@
 # Function to format output of 2 columns with dots between the values
-2-column-output() {
+2_column_output() {
 	awk '{
 				# Calculate the number of dots needed
 				dots = 30 - 1 - length($1)
@@ -10,7 +10,7 @@
 		}'
 }
 
-create-headers() {
+create_headers() {
 	max_length=30
 	printf "\n"
 	# Print all headers
@@ -33,4 +33,18 @@ create-headers() {
 	done
 
 	printf "\n"
+}
+
+show_loading_animation() {
+	local pid=$1
+	local delay=0.1
+	local spinstr='|/-\'
+	while [ "$(ps a | awk '{print $1}' | grep "$pid")" ]; do
+		local temp=${spinstr#?}
+		printf " [%c]  " "$spinstr"
+		local spinstr=$temp${spinstr%"$temp"}
+		printf "\b\b\b\b\b\b"
+		sleep $delay
+	done
+	printf "    \b\b\b\b"
 }
