@@ -45,3 +45,74 @@ push() {
 		git push "$@"
 	fi
 }
+
+pull_all_master() {
+	#  Parameters: --stash-message <message>
+	for param in "$@"; do
+		case $param in
+		--stash-message)
+			stash_message="$2"
+			shift 2
+			;;
+		esac
+	done
+
+	run_command_in_repos "git_sync master --no-switch --stash-message $stash_message"
+}
+
+# @param $1: issue number
+# @param --sync - sync before switching
+# @param --sync-branch - sync the branch after switching
+switch_issue() {
+	# Check for parameter
+	if [ -z "$1" ]; then
+		echo "Usage: switch_issue <issue_number> [--sync]"
+		return 1
+	fi
+
+	# Issue number is always the first parameter
+	issue_number="$1"
+
+	# Remove the first parameter
+	shift
+
+	# Parse arguments
+	sync=false
+	sync_branch=false
+	for param in "$@"; do
+		case "$param" in
+		--sync)
+			sync=true
+			shift
+			;;
+		--sync-branch)
+			sync_branch=true
+			shift
+			;;
+		esac
+	done
+
+	branch_prefix="feature/VERBU-$issue_number"
+
+	printf "Switching to branch with prefix %s\n\n" "$branch_prefix"
+
+	# Run the command and capture the output
+	if $sync; then
+		cmd="git_sync checkout_branch_with_prefix $branch_prefix"
+	else
+		cmd="checkout_branch_with_prefix $branch_prefix --no-output"
+	fi
+
+	if $sync_branch; then
+		cmd="$cmd --pull"
+	fi
+
+	if $sync; then
+		run_command_in_repos "$cmd"
+	else
+		run_command_in_repos --no-output "$cmd"
+	fi
+
+	# TODO Show the loading animation while the command is running
+	# show_loading_animation
+}

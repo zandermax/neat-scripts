@@ -4,12 +4,18 @@
 alias g='git'
 alias gs='git status'
 alias gf='git fetch'
+
 alias ga='git add'
+
 alias gc='git commit'
 alias gcm='git commit -m'
+
 alias gp='git push'
 alias gpl='git pull'
 alias gpf='git push --force-with-lease'
+
+alias gsw='git switch'
+alias gs-='git switch -'
 
 alias push-new-branch='git push --set-upstream origin $(git rev-parse --abbrev-ref HEAD)'
 
@@ -124,23 +130,67 @@ git_squash_since_branch() {
 	fi
 }
 
+# @param $1: prefix
+# @param --no-output - optional parameter to suppress output
+#  @param --pull - optional parameter to pull changes after switching
 checkout_branch_with_prefix() {
 	prefix=$1
-	echo "Checking out branch with prefix $prefix"
+	no_output=false
+
+	shift
+	# Check for --no-output parameter
+	for param in "$@"; do
+		if [ "$param" = "--no-output" ]; then
+			no_output=true
+			shift
+		fi
+	done
+
+	repo_name=$(basename "$(pwd)")
+
+	if [ "$no_output" != true ]; then
+		echo "Checking out branch with prefix $prefix"
+	fi
+
 	# Command to check for branches with the given prefix and switch to the branch if it exists
 	branch=$(git branch --list "$prefix*" | head -n 1)
 	if [ -n "$branch" ]; then
 		branch_name=$(echo "$branch" | sed 's/^[* ]*//')
-		git checkout "$branch_name"
+		if [ "$no_output" = true ]; then
+			git switch "$branch_name" >/dev/null 2>&1
+		else
+			git switch "$branch_name"
+		fi
+
+		if [ "$1" = "--pull" ]; then
+			git pull
+		fi
+
+		printf "- %s\n" "$repo_name"
+		printf "-> %s\n\n" "$branch_name"
 	else
-		echo "No branch found with prefix $prefix"
+		if [ "$no_output" != true ]; then
+			echo "No branch found with prefix $prefix"
+		fi
 	fi
 }
 
 squish() {
-	# Get first commit message on the branch since master
-	first_commit_message=$(git log --pretty=format:%s $(git merge-base HEAD master)..HEAD | tail -n 1)
-	git_squash_since_branch master -m "$first_commit_message"
+	# Get changes
+	git fetch
+	git_sync master --no-switch
+
+	# Get branch name that this branch was created from
+	branch_created_from=$(git merge-base HEAD master)
+
+	# Get first commit message on the branch since it was created
+	first_commit_message=$(git log --pretty=format:%s $(git merge-base HEAD "$branch_created_from")..HEAD | tail -n 1)
+	"$branch_created_from" -m "$first_commit_message"a
+
+	# Squash commits
+	git_squash_since_branch "$branch_created_from" -m "$first_commit_message"
+
+	# Push changes
 	gpf
 }
 

@@ -38,13 +38,13 @@ create_headers() {
 show_loading_animation() {
 	local pid=$1
 	local delay=0.1
-	local spinstr='|/-\'
+	local spinstr='⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'
 	while [ "$(ps a | awk '{print $1}' | grep "$pid")" ]; do
-		local temp=${spinstr#?}
-		printf " [%c]  " "$spinstr"
-		local spinstr=$temp${spinstr%"$temp"}
-		printf "\b\b\b\b\b\b"
-		sleep $delay
+		for ((i = 0; i < ${#spinstr}; i++)); do
+			printf " [%s]  " "${spinstr:$i:1}"
+			printf "\b\b\b\b\b\b"
+			sleep $delay
+		done
 	done
 	printf "    \b\b\b\b"
 }
