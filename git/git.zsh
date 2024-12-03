@@ -188,6 +188,10 @@ checkout_branch_with_prefix() {
 	fi
 
 	branch_name=$(echo "$branch" | sed 's/^[* ]*//')
+	# Remove leading '/origin/' from branch name if remote
+	if [ "$remote" = true ]; then
+		branch_name=$(echo "$branch_name" | sed 's/origin\///')
+	fi
 
 	# If the branch is not yet cloned locally, add the --create flag to the command
 	create_flag=""
@@ -195,10 +199,10 @@ checkout_branch_with_prefix() {
 		create_flag="--create"
 	fi
 
-	if [ "$output_level" = none ]; then
-		git switch "$create_flag" "$branch_name" >/dev/null 2>&1
-	else
+	if [ "$output_level" = all ]; then
 		git switch "$create_flag" "$branch_name"
+	else
+		git switch "$create_flag" "$branch_name" >/dev/null 2>&1
 	fi
 
 	if [ "$pull" = true ]; then

@@ -66,7 +66,7 @@ list_repos_not_on_branch() {
 			# Check if the current branch is not the target branch
 			if [ "$current_branch" != "$target_branch" ]; then
 				echo "$dir"
-				echo "   is on branch $current_branch"
+				echo "   is on branch:   $current_branch"
 			fi
 		fi
 	done
@@ -86,3 +86,5 @@ pull_all() {
 	echo "Repositories updated: $updated_count"
 	rm -f /tmp/error$$
 }
+
+alias not_master="list_repos_not_on_branch master"
