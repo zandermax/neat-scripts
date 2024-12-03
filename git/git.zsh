@@ -36,6 +36,10 @@ git_nodefiles_from_branch() {
 	git checkout "$1" --theirs package.json yarn.lock
 }
 
+# Syncs the current branch with the remote branch, and auto-stashes changes if there are any
+# @param $1: branch name
+# @param --no-switch - optional parameter to not switch to the branch after syncing
+# @param --stash-message - optional parameter to provide a message for the stash
 git_sync() {
 	# Check for parameter
 	if [ -z "$1" ]; then
@@ -43,6 +47,7 @@ git_sync() {
 		return 1
 	fi
 
+	shift
 	#  Parameter switches: --no-switch, --stash-message
 	for param in "$@"; do
 		case $param in
@@ -132,50 +137,92 @@ git_squash_since_branch() {
 
 # @param $1: prefix
 # @param --no-output - optional parameter to suppress output
-#  @param --pull - optional parameter to pull changes after switching
+# @param --pull - optional parameter to pull changes after switching
+# @param --success-only - optional parameter to only show success messages
 checkout_branch_with_prefix() {
 	prefix=$1
-	no_output=false
+	output_level=all
+	remote=false
 
 	shift
-	# Check for --no-output parameter
+	# Parse parameters
 	for param in "$@"; do
-		if [ "$param" = "--no-output" ]; then
-			no_output=true
+		case $param in
+		--no-output)
+			output_level=none
 			shift
-		fi
+			;;
+		--pull)
+			pull=true
+			shift
+			;;
+		--success-only)
+			output_level=success
+			shift
+			;;
+		esac
 	done
 
 	repo_name=$(basename "$(pwd)")
 
-	if [ "$no_output" != true ]; then
+	if [ "$output_level" = all ]; then
 		echo "Checking out branch with prefix $prefix"
 	fi
 
 	# Command to check for branches with the given prefix and switch to the branch if it exists
 	branch=$(git branch --list "$prefix*" | head -n 1)
-	if [ -n "$branch" ]; then
-		branch_name=$(echo "$branch" | sed 's/^[* ]*//')
-		if [ "$no_output" = true ]; then
-			git switch "$branch_name" >/dev/null 2>&1
-		else
-			git switch "$branch_name"
-		fi
 
-		if [ "$1" = "--pull" ]; then
+	# Verify branch found locally, if not then check remote branches
+	if [ -z "$branch" ]; then
+		# Local branch not found, check remote branches
+		branch=$(git branch --list -r "origin/$prefix*" | head -n 1)
+		#  Verify branch found remotely
+		if [ -z "$branch" ]; then
+			if [ "$output_level" = all ]; then
+				echo "No branch found with prefix $prefix"
+			fi
+			# No return code because this is not an error, just no branch found
+			return
+		fi
+		remote=true
+	fi
+
+	branch_name=$(echo "$branch" | sed 's/^[* ]*//')
+
+	# If the branch is not yet cloned locally, add the --create flag to the command
+	create_flag=""
+	if [ "$remote" = true ]; then
+		create_flag="--create"
+	fi
+
+	if [ "$output_level" = none ]; then
+		git switch "$create_flag" "$branch_name" >/dev/null 2>&1
+	else
+		git switch "$create_flag" "$branch_name"
+	fi
+
+	if [ "$pull" = true ]; then
+		if [ "$output_level" = none ]; then
+			git pull >/dev/null 2>&1
+		else
 			git pull
 		fi
+	fi
 
+	if [ "$output_level" != none ]; then
+		# Output the repo name and branch name
 		printf "- %s\n" "$repo_name"
 		printf "-> %s\n\n" "$branch_name"
-	else
-		if [ "$no_output" != true ]; then
-			echo "No branch found with prefix $prefix"
-		fi
 	fi
 }
 
 squish() {
+	# Make sure we are not on master
+	if [ "$(git rev-parse --abbrev-ref HEAD)" = "master" ]; then
+		echo "Cannot squash commits on master"
+		return 1
+	fi
+
 	# Get changes
 	git fetch
 	git_sync master --no-switch
@@ -195,7 +242,6 @@ squish() {
 }
 
 #  Function aliases
-
 alias fix-commit='git_fix_last_commit'
 alias squash-branch='git_squash_since_branch'
 alias squash='git_squash_commits'

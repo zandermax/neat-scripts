@@ -65,7 +65,8 @@ list_repos_not_on_branch() {
 			current_branch=$(cd "$dir" && git rev-parse --abbrev-ref HEAD)
 			# Check if the current branch is not the target branch
 			if [ "$current_branch" != "$target_branch" ]; then
-				echo "$dir is on branch $current_branch"
+				echo "$dir"
+				echo "   is on branch $current_branch"
 			fi
 		fi
 	done

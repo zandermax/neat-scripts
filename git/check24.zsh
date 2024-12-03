@@ -60,6 +60,10 @@ pull_all_master() {
 	run_command_in_repos "git_sync master --no-switch --stash-message $stash_message"
 }
 
+reset_all() {
+	run_command_in_repos "git_sync master"
+}
+
 # @param $1: issue number
 # @param --sync - sync before switching
 # @param --sync-branch - sync the branch after switching
@@ -94,25 +98,18 @@ switch_issue() {
 
 	branch_prefix="feature/VERBU-$issue_number"
 
-	printf "Switching to branch with prefix %s\n\n" "$branch_prefix"
+	printf "Switching to branches with prefix %s\n\n" "$branch_prefix"
 
 	# Run the command and capture the output
 	if $sync; then
-		cmd="git_sync checkout_branch_with_prefix $branch_prefix"
+		cmd="git_sync && checkout_branch_with_prefix $branch_prefix"
 	else
-		cmd="checkout_branch_with_prefix $branch_prefix --no-output"
+		cmd="checkout_branch_with_prefix $branch_prefix --success-only"
 	fi
 
 	if $sync_branch; then
 		cmd="$cmd --pull"
 	fi
 
-	if $sync; then
-		run_command_in_repos "$cmd"
-	else
-		run_command_in_repos --no-output "$cmd"
-	fi
-
-	# TODO Show the loading animation while the command is running
-	# show_loading_animation
+	run_command_in_repos --no-output "$cmd"
 }
