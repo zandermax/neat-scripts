@@ -1,4 +1,4 @@
-stars="********************************************************************************"
+MULTI_REPO_DIR=~/bu-repos-all
 
 push() {
 	# Parse arguments
@@ -73,6 +73,9 @@ switch_issue() {
 		echo "Usage: switch_issue <issue_number> [--sync]"
 		return 1
 	fi
+
+	# Change to multi-repo_dir
+	cd "$MULTI_REPO_DIR" || return 1
 
 	# Issue number is always the first parameter
 	issue_number="$1"
