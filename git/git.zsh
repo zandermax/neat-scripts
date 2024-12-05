@@ -47,6 +47,8 @@ git_sync() {
 		return 1
 	fi
 
+	branch="$1"
+
 	shift
 	#  Parameter switches: --no-switch, --stash-message
 	for param in "$@"; do
@@ -62,18 +64,18 @@ git_sync() {
 		esac
 	done
 
-	#  check if there are any changes
-	if ! git diff-index --quiet HEAD --; then
-		echo "There are changes in the working directory. Stashing changes before sync."
-		if [ -z "$stash_message" ]; then
-			stash_message="Stashing changes before sync"
-		fi
-		git stash -m "$stash_message"
+	git fetch
+
+	#  check if there are any changes and stash if found
+	if ! git diff --quiet; then
 		stashed_changes=true
+		echo "Changes found, stashing"
+		if [ -n "$stash_message" ]; then
+			git stash -m "$stash_message"
+		fi
 	fi
 
-	git switch "$1"
-	git fetch
+	git switch "$branch"
 	git pull
 
 	if [ "$no_switch" != true ]; then

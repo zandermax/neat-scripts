@@ -1,4 +1,5 @@
 MULTI_REPO_DIR=~/bu-repos-all
+WORKSPACES_DIR="$MULTI_REPO_DIR/__workspaces"
 
 push() {
 	# Parse arguments
@@ -46,22 +47,89 @@ push() {
 	fi
 }
 
-pull_all_master() {
-	#  Parameters: --stash-message <message>
+# Reset all repos to the master branch
+reset_all() {
+	run_command_in_repos "git_sync master --no-switch"
+
+	echo "Reset all repos to the master branch"
+}
+
+# Sync all repos with the master branch
+update_all() {
+	run_command_in_repos "git_sync master"
+
+	echo "Merged master into all repos"
+}
+
+# 1. Creates a new branch with the given param as name
+# 2. Links the workspace in the directory for the issue in the workspaces dir,
+# 	creating the dir if it doesn't exist
+# 3. Adds the linked directory to the VS Code workspace file ($WORKSPACES_DIR/VERBU-$1.code-workspace), creating it if it doesn't exist
+# 4. Opens the workspace in VS Code
+# @param $1: issue number ($ISSUE_NUMBER)
+# @param $2: branch name (appended to 'feature/VERBU-$ISSUE_NUMBER')
+#  @ param --open - open the workspace in VS Code
+issue_branch() {
+	# Check for parameter
+	if [ -z "$1" ]; then
+		echo "Usage: issue_branch <issue_number>"
+		return 1
+	fi
+
+	# Issue number is always the first parameter
+	issue_number="$1"
+	branch_name="$2"
+
+	shift 2
+	#  Parse arguments
+	open=false
 	for param in "$@"; do
-		case $param in
-		--stash-message)
-			stash_message="$2"
-			shift 2
+		case "$param" in
+		--open)
+			open=true
+			shift
 			;;
 		esac
 	done
 
-	run_command_in_repos "git_sync master --no-switch --stash-message $stash_message"
-}
+	# Convert spaces in branch name to hyphens
+	branch_name=$(echo "$branch_name" | tr ' ' '-')
 
-reset_all() {
-	run_command_in_repos "git_sync master"
+	# Create the branch
+	branch_name="feature/VERBU-${issue_number}_${branch_name}"
+	echo "Creating branch $branch_name"
+	git checkout -b "$branch_name"
+
+	# Create the workspace directory if it doesn't exist
+	workspace_dir="$WORKSPACES_DIR/VERBU-$issue_number"
+	mkdir -p "$workspace_dir"
+
+	# Name of current directory, without the path
+	current_dir=$(basename "$(pwd)")
+
+	# Link the workspace in the directory for the issue in the workspaces dir, named as the current directory
+	ln -s "$(pwd)" "$workspace_dir/$current_dir"
+
+	# 	# Create the workspace file if it doesn't exist
+	workspace_file="$WORKSPACES_DIR/VERBU-$issue_number.code-workspace"
+	if [ ! -f "$workspace_file" ]; then
+		# Create the workspace file
+		echo "Creating workspace file $workspace_file"
+
+		echo "{" >"$workspace_file"
+		echo '	"folders": [' >>"$workspace_file"
+		echo "		{" >>"$workspace_file"
+		echo "			"\"name\"": \"$current_dir\"," >>"$workspace_file"
+		echo "			"\"path\"": \"../$current_dir\"" >>"$workspace_file"
+		echo "		}" >>"$workspace_file"
+		echo "	]" >>"$workspace_file"
+		echo "}" >>"$workspace_file"
+	fi
+
+	# Open the workspace in VS Code
+	if $open; then
+		code "$workspace_file"
+	fi
 }
 
 # @param $1: issue number
