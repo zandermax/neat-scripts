@@ -108,7 +108,13 @@ issue_branch() {
 	current_dir=$(basename "$(pwd)")
 
 	# Link the workspace in the directory for the issue in the workspaces dir, named as the current directory
-	ln -s "$(pwd)" "$workspace_dir/$current_dir"
+	# Check if link already exists, create if not
+	if [ -L "$workspace_dir/$current_dir" ]; then
+		echo "Link already exists"
+	else
+		# FIXME This seems to be adding a link inside the project directory as well?
+		ln -s "$(pwd)" "$workspace_dir/$current_dir"
+	fi
 
 	# 	# Create the workspace file if it doesn't exist
 	workspace_file="$WORKSPACES_DIR/VERBU-$issue_number.code-workspace"
@@ -120,10 +126,14 @@ issue_branch() {
 		echo '	"folders": [' >>"$workspace_file"
 		echo "		{" >>"$workspace_file"
 		echo "			"\"name\"": \"$current_dir\"," >>"$workspace_file"
-		echo "			"\"path\"": \"../$current_dir\"" >>"$workspace_file"
+		echo "			"\"path\"": \"../$workspace_dir\"" >>"$workspace_file"
+		echo "		" >>"$workspace_file"
 		echo "		}" >>"$workspace_file"
 		echo "	]" >>"$workspace_file"
 		echo "}" >>"$workspace_file"
+
+	else # Add the linked directory to the workspace file
+		# TODO: Check if the directory is already in the workspace file, add otherwise
 	fi
 
 	# Open the workspace in VS Code
