@@ -83,6 +83,8 @@ push() {
 
 # Reset all repos to the master branch
 reset_all() {
+	# Change to multi-repo_dir
+	cd "$MULTI_REPO_DIR" || return 1
 	run_command_in_repos "git_sync master --no-switch"
 
 	echo "Reset all repos to the master branch"
