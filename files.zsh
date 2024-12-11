@@ -1,3 +1,9 @@
+#  Load dependencies if needed (usually only in tests)
+#  Source ./output.zsh if create_headers command is not defined
+if ! type create_headers &>/dev/null; then
+	source ./output.zsh
+fi
+
 # Function to show counts of files per directory, with headers in output
 count_files() {
 	create_headers "Count" "Directory"
