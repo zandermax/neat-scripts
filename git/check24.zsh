@@ -25,6 +25,16 @@ push() {
 				print_help_cmd="$print_help_cmd --switch $key '$description'"
 			done
 
+			# Add examples to the help message
+			examples=(
+				"push --force"
+				"push --allow-master"
+				"push --force --allow-master"
+			)
+			for example in "${examples[@]}"; do
+				print_help_cmd="$print_help_cmd --example '$example'"
+			done
+
 			eval "$print_help_cmd"
 			return 0
 		elif [[ -n "${switch_to_command_and_description[$1]}" ]]; then
