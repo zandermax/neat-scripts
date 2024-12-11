@@ -37,6 +37,76 @@ create_headers() {
 	printf "\n"
 }
 
+# Prints the help message for a command
+# @param $1 - the command name
+# @param $2 - the description of the command
+# @param --switch [switch values] [switch description] - optional, switch values and description
+# @param --example [example command] [example description] - optional, example command and description
+#
+#
+# Example:
+# print_help "my_command" "This is my command" --switch "-a, --all" "Do all the things" --example "my_command -a" "value for -a" --example "my_command --all" "value for --all"
+#
+# Example output:
+# 	my_command - This is my command
+#
+# 	Switches:
+# 		-a, --all		Do all the things
+#
+# 	Example usage:
+# 		my_command -a 			"value for -a"
+# 		my_command --all 		"value for --all"
+print_help() {
+	# The first argument is the command name
+	local command_name=$1
+	shift
+
+	# The second argument is the description
+	local description=$1
+	shift
+
+	# Initialize the arrays for the switches and examples
+	local switches=()
+	local examples=()
+
+	# Parse the rest of the arguments
+	while [ $# -gt 0 ]; do
+		case $1 in
+		--switch)
+			# Add the switch values and description to the switches array
+			switches+=("$2 $3")
+			shift 3
+			;;
+		--example)
+			# Add the example command and description to the examples array
+			examples+=("$2 $3")
+			shift 3
+			;;
+		esac
+	done
+
+	# Print the command name and description
+	printf "%s - %s\n\n" "$command_name" "$description"
+
+	# Print the switches if there are any
+	if [ ${#switches[@]} -gt 0 ]; then
+		printf "Switches:\n"
+		for switch in "${switches[@]}"; do
+			printf "\t%s\t\t%s\n" "$switch"
+		done
+		printf "\n"
+	fi
+
+	# Print the examples if there are any
+	if [ ${#examples[@]} -gt 0 ]; then
+		printf "Example usage:\n"
+		for example in "${examples[@]}"; do
+			printf "\t%s\t\t\t%s\n" "$example"
+		done
+		printf "\n"
+	fi
+}
+
 # Shows a loading spinner while a command is run
 # @param $1 - the command to run
 run_with_loading_animation() {
