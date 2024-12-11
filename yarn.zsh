@@ -19,6 +19,8 @@ log_error() {
 
 build_all_npm() {
 	execute_in_dirs "*-npm-*/" "yb"
+	echo "Built all npm packages"
+	echo
 }
 
 link_all_npm() {
@@ -27,6 +29,8 @@ link_all_npm() {
 
 unlink_all_npm() {
 	execute_in_dirs "*-npm-*/" "yarn unlink"
+	echo "Unlinked all npm packages"
+	echo
 }
 
 get_all_linked() {
@@ -44,5 +48,7 @@ yarn_clean() {
 		rm -rf .next
 		rm -rf .yarn
 		rm -f yarn.lock
+	else
+		yarn clean
 	fi
 }
