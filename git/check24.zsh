@@ -132,16 +132,18 @@ issue_branch() {
 		esac
 	done
 
+	full_issue_number="VERBU-$issue_number"
+
 	# Convert spaces in branch name to hyphens
 	branch_name=$(echo "$branch_name" | tr ' ' '-')
 
 	# Create the branch
-	branch_name="feature/VERBU-${issue_number}_${branch_name}"
+	branch_name="feature/$full_issue_number-$branch_name"
 	echo "Creating branch $branch_name"
 	git checkout -b "$branch_name"
 
 	# Create the workspace directory if it doesn't exist
-	workspace_dir="$WORKSPACES_DIR/VERBU-$issue_number"
+	workspace_dir="$WORKSPACES_DIR/$full_issue_number"
 	mkdir -p "$workspace_dir"
 
 	# Name of current directory, without the path
@@ -157,7 +159,7 @@ issue_branch() {
 	fi
 
 	# 	# Create the workspace file if it doesn't exist
-	workspace_file="$WORKSPACES_DIR/VERBU-$issue_number.code-workspace"
+	workspace_file="$WORKSPACES_DIR/$full_issue_number.code-workspace"
 	if [ ! -f "$workspace_file" ]; then
 		# Create the workspace file
 		echo "Creating workspace file $workspace_file"
@@ -166,8 +168,7 @@ issue_branch() {
 		echo '	"folders": [' >>"$workspace_file"
 		echo "		{" >>"$workspace_file"
 		echo "			"\"name\"": \"$current_dir\"," >>"$workspace_file"
-		echo "			"\"path\"": \"../$workspace_dir\"" >>"$workspace_file"
-		echo "		" >>"$workspace_file"
+		echo "			"\"path\"": \"./$full_issue_number/$current_dir"" >>"$workspace_file"
 		echo "		}" >>"$workspace_file"
 		echo "	]" >>"$workspace_file"
 		echo "}" >>"$workspace_file"
