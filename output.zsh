@@ -106,15 +106,8 @@ print_help() {
 			switch_values=($2)
 			# Description (may have spaces)
 			switch_description="$3"
-			echo "Switch description: $switch_description"
-			# Use 2_column_output to format the switch values and description
+
 			switches+="${switch_values[@]}"__"$switch_description"
-			# switches=("${switches[@]}" "$switch_output")
-			# echo "$switch_values" "\"$switch_description\"" | 2_column_output --width 80
-			# switch_length=${#2}
-			# switch_description_length=${#3}
-			# dots=$((80 - switch_length - switch_description_length))
-			# switches+=("$2 $(printf "%0.s." $(seq 1 $dots)) $3")
 			shift 3
 			;;
 		--example)
