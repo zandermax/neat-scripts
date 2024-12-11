@@ -85,11 +85,11 @@ push() {
 reset_all() {
 	run_command_in_repos "git_sync master --no-switch"
 
-	# Unlink any linked npm packages
-	unlink_all_npm
-
 	echo "Reset all repos to the master branch"
 	echo
+
+	# Unlink any linked npm packages
+	unlink_all_npm
 }
 
 # Sync all repos with the master branch
