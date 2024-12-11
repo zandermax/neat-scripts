@@ -45,17 +45,17 @@ create_headers() {
 #
 #
 # Example:
-# print_help "my_command" "This is my command" --switch "-a, --all" "Do all the things" --example "my_command -a" "value for -a" --example "my_command --all" "value for --all"
+# print_help "my_command" "This is my command" --switch "-a, --all" "Do all the things" --example "my_command -a \"value for -a\"" --example "my_command --all \"value for --all\""
 #
 # Example output:
 # 	my_command - This is my command
 #
 # 	Switches:
-# 		-a, --all		Do all the things
+# 		-a, --all				Do all the things
 #
 # 	Example usage:
-# 		my_command -a 			"value for -a"
-# 		my_command --all 		"value for --all"
+# 		my_command -a "value for -a"
+# 		my_command --all "value for --all"
 print_help() {
 	# The first argument is the command name
 	local command_name=$1
@@ -73,14 +73,17 @@ print_help() {
 	while [ $# -gt 0 ]; do
 		case $1 in
 		--switch)
-			# Add the switch values and description to the switches array
-			switches+=("$2 $3")
+			# Add dots between the values and the description, so that the full line length is 80 characters
+			switch_length=${#2}
+			switch_description_length=${#3}
+			dots=$((80 - switch_length - switch_description_length))
+			switches+=("$2 $(printf "%0.s." $(seq 1 $dots)) $3")
 			shift 3
 			;;
 		--example)
 			# Add the example command and description to the examples array
-			examples+=("$2 $3")
-			shift 3
+			examples+=("$2")
+			shift 2
 			;;
 		esac
 	done
@@ -92,7 +95,8 @@ print_help() {
 	if [ ${#switches[@]} -gt 0 ]; then
 		printf "Switches:\n"
 		for switch in "${switches[@]}"; do
-			printf "\t%s\t\t%s\n" "$switch"
+			# Include any quotes in the switch values and description
+			printf "\t%s\n" "$switch"
 		done
 		printf "\n"
 	fi
@@ -101,7 +105,8 @@ print_help() {
 	if [ ${#examples[@]} -gt 0 ]; then
 		printf "Example usage:\n"
 		for example in "${examples[@]}"; do
-			printf "\t%s\t\t\t%s\n" "$example"
+			# Include any quotes in the example command
+			printf "\t%s\n" "$example"
 		done
 		printf "\n"
 	fi
