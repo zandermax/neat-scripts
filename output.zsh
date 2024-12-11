@@ -1,15 +1,44 @@
 stars="********************************************************************************"
 
-# Function to format output of 2 columns with dots between the values
+# Outputs in 2 columns, separated by dots of a specified width
+# @param --width [width] - optional, the width of the columns (default 30)
 2_column_output() {
-	awk '{
-				# Calculate the number of dots needed
-				dots = 30 - 1 - length($1)
-				# Print the first column, dots, and second column
-				printf "%s ", $1
-				for (i = 0; i < dots; i++) printf "."
-				printf " %s\n", $2
-		}'
+	width=30
+
+	# Parse optional width parameter
+	while [[ "$1" =~ ^--width ]]; do
+		case "$1" in
+		--width)
+			shift
+			width=$1
+			shift
+			;;
+		esac
+	done
+
+	# Read input from pipe
+	while IFS= read -r line; do
+		if [[ "$line" == *"__"* ]]; then
+			IFS="__" read -r col1 col2 <<<"$line"
+		else
+			IFS=" " read -r col1 col2 <<<"$line"
+		fi
+
+		# Remove any leading underscore from col2
+		col2=${col2#_}
+
+		# Calculate the number of dots needed
+		dots=$((width - ${#col1} - ${#col2}))
+		if ((dots < 0)); then
+			dots=0
+		fi
+
+		# Generate dots
+		dot_str=$(printf "%${dots}s" | tr ' ' '.')
+
+		# Print the formatted output
+		printf "%s %s %s\n" "$col1" "$dot_str" "$col2"
+	done
 }
 
 create_headers() {
@@ -74,10 +103,18 @@ print_help() {
 		case $1 in
 		--switch)
 			# Add dots between the values and the description, so that the full line length is 80 characters
-			switch_length=${#2}
-			switch_description_length=${#3}
-			dots=$((80 - switch_length - switch_description_length))
-			switches+=("$2 $(printf "%0.s." $(seq 1 $dots)) $3")
+			switch_values=($2)
+			# Description (may have spaces)
+			switch_description="$3"
+			echo "Switch description: $switch_description"
+			# Use 2_column_output to format the switch values and description
+			switches+="${switch_values[@]}"__"$switch_description"
+			# switches=("${switches[@]}" "$switch_output")
+			# echo "$switch_values" "\"$switch_description\"" | 2_column_output --width 80
+			# switch_length=${#2}
+			# switch_description_length=${#3}
+			# dots=$((80 - switch_length - switch_description_length))
+			# switches+=("$2 $(printf "%0.s." $(seq 1 $dots)) $3")
 			shift 3
 			;;
 		--example)
@@ -95,8 +132,7 @@ print_help() {
 	if [ ${#switches[@]} -gt 0 ]; then
 		printf "Switches:\n"
 		for switch in "${switches[@]}"; do
-			# Include any quotes in the switch values and description
-			printf "\t%s\n" "$switch"
+			printf "\t%s\n" "$switch" | 2_column_output --width 80
 		done
 		printf "\n"
 	fi
