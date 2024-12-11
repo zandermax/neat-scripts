@@ -168,7 +168,7 @@ issue_branch() {
 		echo '	"folders": [' >>"$workspace_file"
 		echo "		{" >>"$workspace_file"
 		echo "			"\"name\"": \"$current_dir\"," >>"$workspace_file"
-		echo "			"\"path\"": \"./$full_issue_number/$current_dir"" >>"$workspace_file"
+		echo "			"\"path\"": \"./$full_issue_number/$current_dir\"" >>"$workspace_file"
 		echo "		}" >>"$workspace_file"
 		echo "	]" >>"$workspace_file"
 		echo "}" >>"$workspace_file"
