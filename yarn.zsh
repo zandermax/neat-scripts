@@ -5,38 +5,32 @@ alias ys="yarn start"
 alias yt="yarn test"
 alias yr="yarn run"
 
-#  Special stuff
+# Special stuff
 alias find-unused="rev-dep entry-points --exclude '**/pages/**' '**/*.spec.*' '*gulpfile*' '*.config.*' '*jest*' 'server.js'"
 alias find-where-used="rev-dep resolve"
 
+# Function to handle error logging
+log_error() {
+	local dir=$1
+	local error_file=$2
+	echo "Error in $dir"
+	error_dirs+="$dir: $(cat "$error_file")\n"
+}
+
 build_all_npm() {
-	# Initialize an empty string to store directories with errors
-	error_dirs=""
-	# Loop through all subdirectories
-	for d in *-npm-*/; do
-		echo "Running yarn install and yarn build in $d"
-		if [ -d "$d/node_modules" ]; then
-			echo "Deleting node_modules in $d"
-			rm -rf "$d/node_modules"
-		fi
-		# Redirect errors to a temp file
-		if ! (cd "$d" && yb) 2>/tmp/error$$; then
-			echo "Error in $d"
-			# Append the directory and error message to the error_dirs string
-			error_dirs+="$d: $(cat /tmp/error$$)\n"
-		fi
-		echo ""
-	done
+	execute_in_dirs "*-npm-*/" "yb"
+}
 
-	# Check if there were any errors
-	if [ -n "$error_dirs" ]; then
-		echo -e "Errors occurred in the following directories:\n$error_dirs"
-	else
-		echo "Built all npm projects successfully"
-	fi
+link_all_npm() {
+	execute_in_dirs "*-npm-*/" "yarn link"
+}
 
-	# Clean up the temporary error file
-	rm -f /tmp/error$$
+unlink_all_npm() {
+	execute_in_dirs "*-npm-*/" "yarn unlink"
+}
+
+get_all_linked() {
+	execute_in_dirs "*-npm-*/" "yarn list --depth=0"
 }
 
 # Runs yarn clean, if that fails, cleans manually
