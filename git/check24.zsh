@@ -1,19 +1,30 @@
 MULTI_REPO_DIR=~/bu-repos-all
 WORKSPACES_DIR="$MULTI_REPO_DIR/__workspaces"
 
+alias force_push="git push --force-with-lease"
+
+# Pushes with checks for common caveats
+# @param --allow-master - allow pushing changes from the master branch
+# @param --force - run --force-with-lease
+# @param $@ - additional arguments to git push
 push() {
-	# Parse arguments
 	allow_master=false
+	force=''
+	additional_args=''
+
+	declare -A switch_to_command=(
+		["--allow-master"]="allow_master=true"
+		["--force"]="force=' --force-with-lease'"
+	)
+
 	while [ $# -gt 0 ]; do
-		case "$1" in
-		--allow-master)
-			allow_master=true
+		if [[ -n "${switch_to_command[$1]}" ]]; then
+			eval "${switch_to_command[$1]}"
 			shift
-			;;
-		*)
-			break
-			;;
-		esac
+		else
+			additional_args+="$1 "
+			shift
+		fi
 	done
 
 	# Check if on master branch and quit with a warning unless --allow-master is set
@@ -40,10 +51,10 @@ push() {
 	# Check if there is an upstream branch being tracked
 	if ! git rev-parse --abbrev-ref --symbolic-full-name @{u} >/dev/null 2>&1; then
 		echo "No upstream branch found. Setting upstream to origin/$current_branch."
-		git push --set-upstream origin "$current_branch" "$@"
+		git push "$force" $additional_args --set-upstream origin "$current_branch"
 	else
 		# Run git push and append any other arguments
-		git push "$@"
+		git push "$force" $additional_args
 	fi
 }
 
@@ -142,6 +153,8 @@ issue_branch() {
 	fi
 }
 
+# Switch to all branches with the given issue number prefix
+#
 # @param $1: issue number
 # @param --sync - sync before switching
 # @param --sync-branch - sync the branch after switching

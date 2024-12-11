@@ -19,29 +19,21 @@ alias gs-='git switch -'
 
 alias push-new-branch='git push --set-upstream origin $(git rev-parse --abbrev-ref HEAD)'
 
+# Fixes the last commit that was pushed by adding any uncommitted changes to the commit
 git_fix_last_commit() {
 	git add .
 	git commit --amend --no-edit
 	git push --force-with-lease
 }
 
-git_nodefiles_from_branch() {
-	# Check for parameter
-	if [ -z "$1" ]; then
-		echo "Usage: git_node_from_branch <branch>"
-		return 1
-	fi
-
-	# Always use incoming changes if there are conflicts
-	git checkout "$1" --theirs package.json yarn.lock
-}
-
 # Syncs the current branch with the remote branch, and auto-stashes changes if there are any
+# The branch is then switched back to the original branch, unless --no-switch is provided
+# The stash message can be provided with --stash-message
+#
 # @param $1: branch name
 # @param --no-switch - optional parameter to not switch to the branch after syncing
 # @param --stash-message - optional parameter to provide a message for the stash
 git_sync() {
-	# Check for parameter
 	if [ -z "$1" ]; then
 		echo "Usage: git_sync <branch> [--no-switch] [--stash-message <message>]"
 		return 1
@@ -89,6 +81,9 @@ git_sync() {
 	fi
 }
 
+# Renames a branch, both locally and remotely
+#
+# @param $1: new branch name
 git_rename_branch() {
 	# Check for parameter
 	if [ -z "$1" ]; then
@@ -107,6 +102,9 @@ git_rename_branch() {
 	git push --set-upstream origin "$1" --no-verify
 }
 
+# Squashes a given number of commits
+#
+# @param $1: number of commits to squash
 git_squash_commits() {
 	# Check for parameter
 	if [ -z "$1" ]; then
@@ -137,6 +135,10 @@ git_squash_since_branch() {
 	fi
 }
 
+# Checks out a branch with a given prefix
+#  If the branch is not found locally, it will check remote branches
+#  This is useful for switching issues
+#
 # @param $1: prefix
 # @param --no-output - optional parameter to suppress output
 # @param --pull - optional parameter to pull changes after switching
@@ -218,6 +220,9 @@ checkout_branch_with_prefix() {
 	fi
 }
 
+# Squashes all commits since branch was created
+#  The first commit message is used as the new commit message
+#  The branch is then force pushed
 squish() {
 	# Make sure we are not on master
 	if [ "$(git rev-parse --abbrev-ref HEAD)" = "master" ]; then

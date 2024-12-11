@@ -1,3 +1,5 @@
+stars="********************************************************************************"
+
 # Function to format output of 2 columns with dots between the values
 2_column_output() {
 	awk '{
@@ -35,16 +37,26 @@ create_headers() {
 	printf "\n"
 }
 
-show_loading_animation() {
-	local pid=$1
+# Shows a loading spinner while a command is run
+# @param $1 - the command to run
+run_with_loading_animation() {
+	local command="$*"
 	local delay=0.1
-	local spinstr='⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'
-	while [ "$(ps a | awk '{print $1}' | grep "$pid")" ]; do
-		for ((i = 0; i < ${#spinstr}; i++)); do
-			printf " [%s]  " "${spinstr:$i:1}"
-			printf "\b\b\b\b\b\b"
+	local spin_string='⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'
+	# Run the command in a subshell with job control messages suppressed
+	(
+		eval "$command"
+	) &>/dev/null &
+	local cmd_pid=$!
+	# Show the loading animation while the command is running
+	while kill -0 "$cmd_pid" 2>/dev/null; do
+		for ((i = 0; i < ${#spin_string}; i++)); do
+			printf "\r[%s] " "${spin_string:$i:1}"
 			sleep $delay
 		done
 	done
-	printf "    \b\b\b\b"
+	# Wait for the command to finish
+	wait "$cmd_pid"
+	# Clear the spinner
+	printf "\r    \r"
 }
