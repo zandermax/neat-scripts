@@ -12,20 +12,33 @@ push() {
 	force=''
 	additional_args=''
 
-	declare -A switch_to_command=(
-		["--allow-master"]="allow_master=true"
-		["--force"]="force=' --force-with-lease'"
+	typeset -A switch_to_command_and_description=(
+		"--allow-master" "allow_master=true|Allow pushing to the master branch"
+		"--force" "force='--force-with-lease'|Force push (with lease)"
 	)
 
 	while [ $# -gt 0 ]; do
-		if [[ -n "${switch_to_command[$1]}" ]]; then
-			eval "${switch_to_command[$1]}"
+		if [[ "$1" == "--help" ]]; then
+			print_help_cmd="print_help push 'Push changes to the remote repository'"
+			for key in "${(@k)switch_to_command_and_description}"; do
+				description="${switch_to_command_and_description[$key]#*|}"
+				print_help_cmd="$print_help_cmd --switch $key '$description'"
+			done
+
+			eval "$print_help_cmd"
+			return 0
+		elif [[ -n "${switch_to_command_and_description[$1]}" ]]; then
+			command="${switch_to_command_and_description[$1]%|*}"
+			eval "$command"
 			shift
 		else
 			additional_args+="$1 "
 			shift
 		fi
 	done
+
+	echo "UH OH"
+	exit 1
 
 	# Check if on master branch and quit with a warning unless --allow-master is set
 	current_branch=$(git rev-parse --abbrev-ref HEAD)
@@ -62,7 +75,11 @@ push() {
 reset_all() {
 	run_command_in_repos "git_sync master --no-switch"
 
+	# Unlink any linked npm packages
+	unlink_all_npm
+
 	echo "Reset all repos to the master branch"
+	echo
 }
 
 # Sync all repos with the master branch
