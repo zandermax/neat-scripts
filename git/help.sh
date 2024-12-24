@@ -14,8 +14,9 @@
 #		["--two|-t"]="Calls inner_function with value"
 # 	["--three|-3"]="Goes to the home directory"
 # )
-# local my_examples=(
-# 	"my_command --one --t"
+# local -A my_examples=(
+# 	["Prints the result"]="my_command --one --t"
+# 	["Calls inner_function with value"]="my_command --two"
 # )
 # print_help "my_command" "This is my command" --examples=my_examples --switches=my_switches
 #
@@ -28,8 +29,9 @@
 # 		-a, --all (optional)				Do all the things
 #
 # 	Example usage:
-# 		my_command -a="value for -a"
-# 		my_command --all="value for --all"
+# 		Prints the result			my_command --one --t
+# 		Calls inner_function with value		my_command --two
+#
 print_help() {
 	local command_name=$1
 	local description=$2
@@ -58,16 +60,15 @@ print_help() {
 		echo ""
 	fi
 
+# Examples keys -> values == description -> command
 	if [[ -n $examples ]]; then
 		echo "Example usage:"
-		for example in ${(P)examples}; do
-			echo "    $example"
+		for key value in ${(kv)${(P)examples}}; do
+				echo "    $key    $value"
 		done
 		echo ""
 	fi
 }
-
-# ...existing code...
 
 my_function_help() {
 	local my_var="my_value"
@@ -77,10 +78,19 @@ my_function_help() {
 		["--three|-3"]="Goes to the home directory"
 	)
 
-	local examples=(
-		"my_function --one --two=value_for_two --three"
-		"my_function -1 --two=another_value --three"
+# Examples are description -> command
+	local -A my_examples=(
+		["Prints the result"]="my_command --one --t"
+		["Calls inner_function with value"]="my_command --two"
+		["Goes to the home directory"]="my_command --three"
 	)
 
-	print_help "my_function" "This is my function" --examples=examples --switches=my_commands
+	echo "ONE"
+	print_help "my_function" "This is my function" --examples=my_examples --switches=my_commands
+
+	echo "TWO"
+	print_help "my_function" "This is my function 2" --examples=my_examples
+
+	echo "THREE"
+	print_help "my_function" "This is my function 3" --switches=my_commands
 }
