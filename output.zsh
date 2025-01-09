@@ -164,3 +164,113 @@ run_with_loading_animation() {
 	# Clear the spinner
 	printf "\r    \r"
 }
+
+# # Creates a loading bar that is displayed at the bottom of the terminal
+# #
+# # @param $1 - the total number of steps in the loading process
+# # @param $2 - the current step
+# # @param --bar-length [length] - optional, the length of the loading bar (default 50)
+# loading_bar() {
+# 	local total_steps=$1
+# 	local current_step=$2
+# 	local bar_length=50
+# 	local fill_char="#"
+# 	local empty_char="."
+
+# 	echo "$total_steps $current_step"
+
+# 	# Parse optional arguments
+# 	for param in "$@"; do
+# 		case "$param" in
+# 		--bar-length)
+# 			shift
+# 			bar_length=$1
+# 			shift
+# 			;;
+# 		esac
+# 	done
+
+# 	# Calculate the percentage of completion
+# 	local percentage=$((100 * current_step / total_steps))
+# 	local num_fill_chars=$((percentage * bar_length / 100))
+# 	local num_empty_chars=$((bar_length - num_fill_chars))
+
+# 	# Create the loading bar
+# 	local bar=$(printf "%${num_fill_chars}s" | tr ' ' "$fill_char")
+# 	local empty=$(printf "%${num_empty_chars}s" | tr ' ' "$empty_char")
+
+# 	# Print the loading bar on the last line, clearing anything there
+# 	# tput cup $(tput lines) 0
+# 	printf "\r[%s%s] %d%%" "$bar" "$empty" "$percentage"
+# }
+
+# Function to initialize the loading bar
+#
+# @param $1 the number of items to_process
+init_loading_bar() {
+	local num_to_process=$1
+
+	# Save the current cursor position
+	tput sc
+	# Draw the initial loading bar
+	loading_bar "$num_to_process" 0
+}
+
+# Function to draw the loading bar
+loading_bar() {
+	local total=$1
+	local current=$2
+	local width=10 # Width of the progress bar in characters
+
+	# Calculate the percentage and the number of filled '#' characters
+	local percent=$(((current * 100) / total))
+	local filled=$(((current * width) / total))
+
+	# Build the loading bar string
+	local bar="["
+	for ((i = 1; i <= width; i++)); do
+		if ((i <= filled)); then
+			bar+="#"
+		else
+			bar+="."
+		fi
+	done
+	bar+="]"
+
+	# Restore cursor to the saved position and draw the loading bar
+	tput rc
+
+	local loading_status="Loading...\n"
+	local max_loading_message_length=$((${#loading_status} + 1))
+	if ((current == total)); then
+		loading_status="Done!"
+		# Add spaces to clear the previous loading message
+		local spaces=$((max_loading_message_length - ${#loading_status}))
+		loading_status+="$(printf "%${spaces}s")"
+	fi
+
+	echo
+	echo -ne "${bar} ${percent}% ${loading_status}"
+	echo
+}
+
+# Function to simulate processing with a loading bar
+run_cmd_with_loading_bar() {
+	local to_process=("item1" "item2" "item3" "item4" "item5")
+	local num_to_process=${#to_process[@]}
+	local num_processed=0
+
+	# Initialize the loading bar
+	init_loading_bar "$num_to_process"
+
+	# Iterate over the items to process
+	for item in "${to_process[@]}"; do
+		# Simulate the command output
+		echo "Processing $item..."
+		sleep 1 # Simulate a delay for the command
+
+		# Update the loading bar
+		num_processed=$((num_processed + 1))
+		loading_bar "$num_to_process" "$num_processed"
+	done
+}
