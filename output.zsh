@@ -217,14 +217,40 @@ init_loading_bar() {
 }
 
 # Function to draw the loading bar
+#
+# @param $1 the total number of items to process
+# @param $2 the current item being processed
+# @param --width [width] - optional, the width of the progress bar in characters
+# @param --show-count - optional, show the current count of items processed
 loading_bar() {
 	local total=$1
+	# Trim spaces from total
+	total=$(echo "$total" | tr -d ' ')
 	local current=$2
-	local width=10 # Width of the progress bar in characters
+	local width=10
+	local show_count=false
+
+	# Shift to not process first 2 arguments
+	shift 2
+
+	# Parse parameters
+	for param in "$@"; do
+		case $param in
+		--width)
+			shift
+			width=$1
+			shift
+			;;
+		--show-count)
+			show_count=true
+			shift
+			;;
+		esac
+	done
 
 	# Calculate the percentage and the number of filled '#' characters
 	local percent=$(((current * 100) / total))
-	local filled=$(((current * width) / total))
+	local filled=$(((percent * width) / 100))
 
 	# Build the loading bar string
 	local bar="["
@@ -249,8 +275,13 @@ loading_bar() {
 		loading_status+="$(printf "%${spaces}s")"
 	fi
 
+	local count=""
+	if [ "$show_count" = true ]; then
+		count="($current/$total) "
+	fi
+
 	echo
-	echo -ne "${bar} ${percent}% ${loading_status}"
+	echo -ne "${bar} ${percent}% ${count}${loading_status}"
 	echo
 }
 
