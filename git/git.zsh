@@ -20,8 +20,14 @@ alias gs-='git switch -'
 alias push-new-branch='git push --set-upstream origin $(git rev-parse --abbrev-ref HEAD)'
 
 # Fixes the last commit that was pushed by adding any uncommitted changes to the commit
+#
+# @param --all - optional parameter to add all changes to the commit
 git_fix_last_commit() {
-	git add .
+	# Check for parameter
+	if [ "$1" = "--all" ]; then
+		git add .
+	fi
+
 	git commit --amend --no-edit
 	git push --force-with-lease
 }
@@ -56,23 +62,35 @@ git_sync() {
 		esac
 	done
 
+	local repo_name=$(basename "$(pwd)")
+
 	git fetch
 
 	#  check if there are any changes and stash if found
 	if ! git diff --quiet; then
 		stashed_changes=true
-		echo "Changes found, stashing"
+		echo "Changes found in ${repo_name}, stashing"
 		if [ -n "$stash_message" ]; then
 			git stash -m "$stash_message"
 		fi
 	fi
 
-	git switch "$branch"
-	git pull
+	# Suppress "already on branch" message
+	current_branch=$(git rev-parse --abbrev-ref HEAD)
+	if [ "$current_branch" = "$branch" ]; then
+		git pull >/dev/null 2>&1
+		return 0
+	fi
+
+	# Only pull if result of git switch is not "Your branch is up to date with 'origin/branch'"
+	switch_command=$(git switch "$branch" 2>&1)
+	if [ "$switch_command" != "Your branch is up to date with 'origin/$branch'." ]; then
+		git pull
+	fi
 
 	if [ "$no_switch" != true ]; then
 		git switch -
-		git merge "$1"
+		git merge "$branch"
 
 		if [ "$stashed_changes" = true ]; then
 			git stash apply
@@ -175,6 +193,8 @@ checkout_branch_with_prefix() {
 
 	# Command to check for branches with the given prefix and switch to the branch if it exists
 	branch=$(git branch --list "$prefix*" | head -n 1)
+	# Branch may have leading characters + spaces, so remove any leading characters and spaces
+	branch=$(echo "$branch" | sed 's/[* ]//g')
 
 	# Verify branch found locally, if not then check remote branches
 	if [ -z "$branch" ]; then
@@ -186,23 +206,36 @@ checkout_branch_with_prefix() {
 				echo "No branch found with prefix $prefix"
 			fi
 			# No return code because this is not an error, just no branch found
-			return
+			return 0
 		fi
 		remote=true
 	fi
 
-	branch_name=$(echo "$branch" | sed 's/^[* ]*//')
+	# Check for any local changes, stash if any found
+	if ! git diff --quiet; then
+		if [ "$output_level" = all ]; then
+			echo "Changes found, stashing"
+		fi
+		git stash
+	fi
+
+	branch_name=$(echo "$branch" | sed 's/origin\///')
+	switch_command="git switch "
 
 	tracked_branch="origin/$branch_name"
 	if [ "$remote" = true ]; then
 		tracked_branch="$branch_name"
-		branch_name=$(echo "$branch_name" | sed 's/origin\///')
+		switch_command+="-c $branch_name --track $tracked_branch"
+	else
+		switch_command+="$branch_name"
 	fi
 
 	if [ "$output_level" = all ]; then
-		git switch --create "$branch_name" --track "$tracked_branch"
+		echo "Switch command: $switch_command"
+		eval "$switch_command"
+		echo "Done"
 	else
-		git switch --create "$branch_name" --track "$tracked_branch" >/dev/null
+		eval "$switch_command" >/dev/null 2>&1
 	fi
 
 	if [ "$pull" = true ]; then
@@ -223,6 +256,8 @@ checkout_branch_with_prefix() {
 # Squashes all commits since branch was created
 #  The first commit message is used as the new commit message
 #  The branch is then force pushed
+#
+# @param $1: branch name that the current branch was created from [default: master]
 squish() {
 	# Make sure we are not on master
 	if [ "$(git rev-parse --abbrev-ref HEAD)" = "master" ]; then
@@ -230,16 +265,13 @@ squish() {
 		return 1
 	fi
 
-	# Get changes
-	git fetch
-	git_sync master --no-switch
+	branch_created_from=${1:-master}
 
-	# Get branch name that this branch was created from
-	branch_created_from=$(git merge-base HEAD master)
+	# Sync with master
+	git_sync master
 
 	# Get first commit message on the branch since it was created
 	first_commit_message=$(git log --pretty=format:%s $(git merge-base HEAD "$branch_created_from")..HEAD | tail -n 1)
-	"$branch_created_from" -m "$first_commit_message"a
 
 	# Squash commits
 	git_squash_since_branch "$branch_created_from" -m "$first_commit_message"
@@ -248,8 +280,16 @@ squish() {
 	gpf
 }
 
+# Syncs a branch from the fork point at which it was created
+# e.g. this will rebase the current branch on top of the branch it was created from
+sync_fork() {
+	git fetch
+	git rebase $(git merge-base --fork-point HEAD)
+}
+
 #  Function aliases
 alias fix-commit='git_fix_last_commit'
+alias fix-commit-all='git_fix_last_commit --all'
 alias squash-branch='git_squash_since_branch'
 alias squash='git_squash_commits'
 alias git-node='git_nodefiles_from_branch'
