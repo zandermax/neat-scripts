@@ -92,6 +92,17 @@ print_help() {
 
 	# The second argument is the description
 	local description=$1
+
+	# TODO this is not working, the string is the same as passed in
+	# Remove all whitespace, including tabs, between a newline and the next word
+	# Use `'expand` to convert tabs to spaces first
+	# This allows better string formatting input code
+	# Note: to add a newline in the description, use \n, for tab use \t
+	description=$(echo "$description" | expand | sed -e 's/\n[[:space:]]*/\n/g')
+
+	# Replace \n or \n with a newline, and \t or /t with a tab
+	description=$(echo "$description" | sed -e 's/\\n/\n/g' -e 's/\\t/\t/g')
+
 	shift
 
 	# Initialize the arrays for the switches and examples
@@ -119,7 +130,8 @@ print_help() {
 	done
 
 	# Print the command name and description
-	printf "%s - %s\n\n" "$command_name" "$description"
+	printf "$command_name \n\n"
+	printf "$description \n\n"
 
 	# Print the switches if there are any
 	if [ ${#switches[@]} -gt 0 ]; then
@@ -292,7 +304,8 @@ run_cmd_with_loading_bar() {
 	local num_processed=0
 
 	# Initialize the loading bar
-	init_loading_bar "$num_to_process"
+	# init_loading_bar "$num_to_process"
+	bar::start
 
 	# Iterate over the items to process
 	for item in "${to_process[@]}"; do
@@ -302,6 +315,21 @@ run_cmd_with_loading_bar() {
 
 		# Update the loading bar
 		num_processed=$((num_processed + 1))
-		loading_bar "$num_to_process" "$num_processed"
+		# loading_bar "$num_to_process" "$num_processed"
+		bar::status_changed "$num_processed" "$num_to_process"
 	done
+}
+
+# Function to simulate processing with a loading bar
+# Wrapper for external library `shell-progressbar`
+my_loading_bar:start() {
+	bar::start
+}
+
+# Function to update the status of the loading bar
+#
+# @param $1 the current step
+# @param $2 the total number of steps
+my_loading_bar:status_changed() {
+	bar::status_changed "$1" "$2"
 }

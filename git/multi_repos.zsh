@@ -1,8 +1,12 @@
 # Run command in all top-level git repos in a directory
+#
 # Available variables:
 # - {repo_dir}: The directory of the repository
-# @param --no-output: Suppress output
+#
 # @param $1: command to run
+#
+# Switches:
+# 	--no-output - Do not print the directory name
 run_command_in_repos() {
 	for param in "$@"; do
 		case $param in
@@ -22,14 +26,32 @@ run_command_in_repos() {
 		return 1
 	fi
 
+	# Count number of subdir git repos
+	num_repos=$(for dir in */; do [ -d "$dir/.git" ] && echo "$dir"; done | wc -l)
+	repo_count=1
+
+	# loading_bar "$num_repos" "$repo_count" --width 100 --show-count
+	# my_loading_bar::start
+
+	local longest_repo_name=0
 	# Iterate over all directories in the current directory
 	for dir in */; do
 		# Check if the directory contains a .git directory
 		if [ -d "$dir/.git" ]; then
 			#  Convert to absolute path
 			repo_dir="$(cd "$dir" && pwd)"
+			# Get the length of the directory name
+			repo_name_length=${#repo_dir}
+			# Update the longest repo name
+			if [ "$repo_name_length" -gt "$longest_repo_name" ]; then
+				longest_repo_name=$repo_name_length
+			fi
 			if [ "$no_output" != true ]; then
-				printf "Running in %s\n" "$repo_dir"
+				local output="Running in ${repo_dir}"
+				# Calculate the number of spaces to add
+				spaces=$((longest_repo_name - repo_name_length))
+				# Add spaces to align the output
+				printf "${output}%${spaces}s\n\n"
 			fi
 			(
 				cd "$repo_dir" || continue
@@ -40,6 +62,11 @@ run_command_in_repos() {
 				echo ""
 			fi
 		fi
+		# Increment the repo count
+		repo_count=$((repo_count + 1))
+
+		# loading_bar "$num_repos" "$repo_count" --width 100 --show-count
+		# my_loading_bar:status_changed "$repo_count" "$num_repos"
 	done
 }
 

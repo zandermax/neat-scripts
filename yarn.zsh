@@ -1,6 +1,7 @@
 alias ybs="yarn install && yarn build && yarn start"
 alias yb="yarn install && yarn build"
 alias ybw="yb --watch"
+alias yl="yarn lint"
 alias ys="yarn start"
 alias yt="yarn test"
 alias yr="yarn run"
@@ -28,7 +29,7 @@ link_all_npm() {
 }
 
 unlink_all_npm() {
-	execute_in_dirs "*-npm-*/" "yarn unlink"
+	execute_in_dirs "\*-npm-\*/" "yarn unlink"
 	echo "Unlinked all npm packages"
 	echo
 }
