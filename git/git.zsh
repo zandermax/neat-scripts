@@ -17,6 +17,9 @@ alias gpf='git push --force-with-lease'
 alias gsw='git switch'
 alias gs-='git switch -'
 
+alias gsh='git stash'
+alias gshp='git stash pop'
+
 alias push-new-branch='git push --set-upstream origin $(git rev-parse --abbrev-ref HEAD)'
 
 # Fixes the last commit that was pushed by adding any uncommitted changes to the commit
