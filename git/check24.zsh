@@ -118,6 +118,37 @@ update_all() {
 	echo "Merged master into all repos"
 }
 
+# Function to create or modify the workspace file
+workspace_file() {
+	full_issue_number="$1"
+	current_dir="$2"
+	workspace_file="$WORKSPACES_DIR/$full_issue_number.code-workspace"
+
+	if [ ! -f "$workspace_file" ]; then
+		echo "Creating workspace file $workspace_file"
+
+		echo "{" >"$workspace_file"
+		echo '    "folders": [' >>"$workspace_file"
+		echo "        {" >>"$workspace_file"
+		echo "            \"name\": \"$current_dir\"," >>"$workspace_file"
+		echo "            \"path\": \"../$current_dir\"" >>"$workspace_file"
+		echo "        }" >>"$workspace_file"
+		echo "    ]" >>"$workspace_file"
+		echo "}" >>"$workspace_file"
+	else
+		echo "Adding $current_dir to workspace file $workspace_file"
+		if ! grep -q "\"path\": \"../$current_dir\"" "$workspace_file"; then
+		# TODO test this
+			# echo "        {" >>"$workspace_file"
+			# echo "            \"name\": \"$current_dir\"," >>"$workspace_file"
+			# echo "            \"path\": \"../$current_dir\"" >>"$workspace_file"
+			# echo "        }," >>"$workspace_file"
+		else
+			echo "Directory already in workspace file"
+		fi
+	fi
+}
+
 # 1. Creates a new branch with the given param as name
 # 2. Links the workspace in the directory for the issue in the workspaces dir,
 # 	creating the dir if it doesn't exist
@@ -128,10 +159,17 @@ update_all() {
 #
 # Switches:
 # 	--open - open the workspace in VS Code
+# 	--no-ws-file - skip workspace file creation
 issue_branch() {
-	# Check for parameter
-	if [ -z "$1" ]; then
-		echo "Usage: issue_branch <issue_number>"
+	# Check for 2 parameters
+	if [ $# -lt 2 ]; then
+		echo "Usage: issue_branch <issue_number> <branch_name> [--open] [--no-ws-file]"
+		echo
+		echo "Example: issue_branch 1234 'My new feature' --open"
+		echo "  This will create a new branch named feature/VERBU-1234_My-new-feature"
+		echo "  and link the workspace in $WORKSPACES_DIR/VERBU-1234.code-workspace"
+		echo "  then open it in VS Code"
+		echo
 		return 1
 	fi
 
@@ -140,12 +178,19 @@ issue_branch() {
 	branch_name="$2"
 
 	shift 2
+
 	#  Parse arguments
 	open=false
+	no_ws_file=false
+
 	for param in "$@"; do
 		case "$param" in
 		--open)
 			open=true
+			shift
+			;;
+		--no-ws-file)
+			no_ws_file=true
 			shift
 			;;
 		esac
@@ -177,28 +222,13 @@ issue_branch() {
 		ln -s "$(pwd)" "$workspace_dir/$current_dir"
 	fi
 
-	# 	# Create the workspace file if it doesn't exist
-	workspace_file="$WORKSPACES_DIR/$full_issue_number.code-workspace"
-	if [ ! -f "$workspace_file" ]; then
-		# Create the workspace file
-		echo "Creating workspace file $workspace_file"
-
-		echo "{" >"$workspace_file"
-		echo '	"folders": [' >>"$workspace_file"
-		echo "		{" >>"$workspace_file"
-		echo "			"\"name\"": \"$current_dir\"," >>"$workspace_file"
-		echo "			"\"path\"": \"../$current_dir\"" >>"$workspace_file"
-		echo "		}" >>"$workspace_file"
-		echo "	]" >>"$workspace_file"
-		echo "}" >>"$workspace_file"
-
-	else # Add the linked directory to the workspace file
-		# TODO: Check if the directory is already in the workspace file, add otherwise
+	if [ "$no_ws_file" = false ]; then
+		workspace_file "$full_issue_number" "$current_dir"
 	fi
 
 	# Open the workspace in VS Code
 	if $open; then
-		code "$workspace_file"
+		code "$WORKSPACES_DIR/$full_issue_number.code-workspace"
 	fi
 }
 
