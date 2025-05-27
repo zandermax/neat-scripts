@@ -53,3 +53,5 @@ yarn_clean() {
 		yarn clean
 	fi
 }
+
+alias yarn-reset="yarn clean && yb && yl && yt"
