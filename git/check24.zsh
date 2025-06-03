@@ -206,21 +206,9 @@ issue_branch() {
 	echo "Creating branch $branch_name"
 	git checkout -b "$branch_name"
 
-	# Create the workspace directory if it doesn't exist
-	workspace_dir="$WORKSPACES_DIR/$full_issue_number"
-	mkdir -p "$workspace_dir"
-
 	# Name of current directory, without the path
 	current_dir=$(basename "$(pwd)")
 
-	# Link the workspace in the directory for the issue in the workspaces dir, named as the current directory
-	# Check if link already exists, create if not
-	if [ -L "$workspace_dir/$current_dir" ]; then
-		echo "Link already exists"
-	else
-		# FIXME This seems to be adding a link inside the project directory as well?
-		ln -s "$(pwd)" "$workspace_dir/$current_dir"
-	fi
 
 	if [ "$no_ws_file" = false ]; then
 		workspace_file "$full_issue_number" "$current_dir"
@@ -317,7 +305,7 @@ switch_to_master() {
 # 3. Merges the remote branch into the local branch
 # 4. Opens the relevant workspace in VS Code
 #
-# @param $1: issue number
+# @param $1: issue number (without VERBU prefix)
 open_issue() {
 	# Check for parameter
 	if [ -z "$1" ]; then
@@ -329,20 +317,25 @@ open_issue() {
 	cd "$MULTI_REPO_DIR" || return 1
 
 	# Issue number is always the first parameter
-	issue_number="$1"
+	issue_number="VERBU-$1"
 
-	# Remove the first parameter
-	shift
-
-	branch_prefix="feature/VERBU-$issue_number"
+	branch_prefix="feature/$issue_number"
 
 	# Run the command and capture the output
 	cmd="checkout_branch_with_prefix $branch_prefix --pull --success-only"
 
-	run_command_in_repos --no-output "$cmd"
+	run_command_in_repos  "$cmd"
 
-	# Open the workspace in VS Code
-	vs_code_cmd="code --new-window $WORKSPACES_DIR/VERBU-$issue_number.code-workspace"
+	# Open the workspace in Cursor / VS Code
+	# check if cursor is installed
+	if command -v cursor >/dev/null 2>&1; then
+		vs_code_cmd="cursor"
+	else
+		vs_code_cmd="code"
+	fi
+
+	vs_code_cmd="$vs_code_cmd $WORKSPACES_DIR/$issue_number.code-workspace"
+
 	echo "$vs_code_cmd"
 }
 
