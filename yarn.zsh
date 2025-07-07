@@ -19,23 +19,23 @@ log_error() {
 }
 
 build_all_npm() {
-	execute_in_dirs "*-npm-*/" "yb"
+	execute_in_dirs "$(ls -d *-npm-*/)" "yb"
 	echo "Built all npm packages"
 	echo
 }
 
 link_all_npm() {
-	execute_in_dirs "*-npm-*/" "yarn link"
+	execute_in_dirs "$(ls -d *-npm-*/)" "yarn link"
 }
 
 unlink_all_npm() {
-	execute_in_dirs "\*-npm-\*/" "yarn unlink"
+	execute_in_dirs "$(ls -d *-npm-*/)" "yarn unlink"
 	echo "Unlinked all npm packages"
 	echo
 }
 
 get_all_linked() {
-	execute_in_dirs "*-npm-*/" "yarn list --depth=0"
+	execute_in_dirs "$(ls -d *-npm-*/)" "yarn list --depth=0"
 }
 
 # Runs yarn clean, if that fails, cleans manually

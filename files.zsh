@@ -33,16 +33,19 @@ count_files_of_type() {
 
 # Function to iterate over directories and execute a command
 execute_in_dirs() {
-	local pattern=$1
+	local directories=$1
 	local command=$2
-	echo "Pattern: $pattern"
-	echo "Command: $command"
-	echo "ls -d $pattern"
+	echo "Running command in directories: $command"
 	error_dirs=""
-	# Use find to expand the pattern and iterate over matching directories
-	result=$(ls -d $pattern)
-	echo "Result: $result"
-	ls -d "$pattern" | while read -r d; do
+
+	# Check if any directories were provided
+	if [ -z "$directories" ]; then
+		echo "No directories provided"
+		return 0
+	fi
+
+	# Execute command in each directory
+	echo "$directories" | while read -r d; do
 		echo "Executing in $d"
 		if ! (cd "$d" && eval "$command") 2>/tmp/error$$; then
 			log_error "$d" /tmp/error$$
