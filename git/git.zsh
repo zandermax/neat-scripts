@@ -92,10 +92,12 @@ git_sync() {
 	fi
 
 	if [ "$no_switch" != true ]; then
+		echo "Switching to $branch"
 		git switch -
 		git merge "$branch"
 
 		if [ "$stashed_changes" = true ]; then
+			echo "Applying stashed changes"
 			git stash apply
 		fi
 
@@ -158,9 +160,10 @@ git_squash_since_branch() {
 
 # Checks out a branch with a given prefix
 #  If the branch is not found locally, it will check remote branches
+#  Local changes are stashed accordingly
 #  This is useful for switching issues
 #
-# @param $1: prefix
+# @param $1: prefix (e.g. feature/VERBU-123)
 # @param --no-output - optional parameter to suppress output
 # @param --pull - optional parameter to pull changes after switching
 # @param --success-only - optional parameter to only show success messages
@@ -188,71 +191,36 @@ checkout_branch_with_prefix() {
 		esac
 	done
 
-	repo_name=$(basename "$(pwd)")
-
-	if [ "$output_level" = all ]; then
-		echo "Checking out branch with prefix $prefix"
+	# Gets any local (not remote) branches that start with the branch_prefix
+	local_branches=$(git branch | grep "$prefix" | sed "s/^[ *]*//")
+	if [ -z "$local_branches" ]; then
+		echo "No local branches found matching $prefix"
 	fi
 
-	# Command to check for branches with the given prefix and switch to the branch if it exists
-	branch=$(git branch --list "$prefix*" | head -n 1)
-	# Branch may have leading characters + spaces, so remove any leading characters and spaces
-	branch=$(echo "$branch" | sed 's/[* ]//g')
-
-	# Verify branch found locally, if not then check remote branches
-	if [ -z "$branch" ]; then
-		# Local branch not found, check remote branches
-		branch=$(git branch --list -r "origin/$prefix*" | head -n 1)
-		#  Verify branch found remotely
-		if [ -z "$branch" ]; then
-			if [ "$output_level" = all ]; then
-				echo "No branch found with prefix $prefix"
-			fi
-			# No return code because this is not an error, just no branch found
-			return 0
+	# If no local branches are found, check remote branches
+	if [ -z "$local_branches" ]; then
+		remote_branches=$(git branch -r | grep "origin/$prefix" | sed "s/^[ *]*origin\///")
+		if [ -z "$remote_branches" ]; then
+			echo "No remote branches found matching $prefix, exiting"
+			return 1
 		fi
-		remote=true
 	fi
 
-	# Check for any local changes, stash if any found
-	if ! git diff --quiet; then
-		if [ "$output_level" = all ]; then
-			echo "Changes found, stashing"
-		fi
-		git stash
+	#  Get the most recent branch, by looking at the most recent commit
+	most_recent_branch=$(echo "$local_branches" | tail -n 1)
+
+	#  If there are any uncommitted changes, stash them
+	if [[ -n "$(git status --porcelain)" ]]; then
+		# git stash push -m "Switching to $prefix"
+		git stash push -m 'Switching to $prefix'
 	fi
 
-	branch_name=$(echo "$branch" | sed 's/origin\///')
-	switch_command="git switch "
-
-	tracked_branch="origin/$branch_name"
-	if [ "$remote" = true ]; then
-		tracked_branch="$branch_name"
-		switch_command+="-c $branch_name --track $tracked_branch"
+	#  Switch to the most recent branch, if not already on it
+	if [ "$most_recent_branch" != "$(git rev-parse --abbrev-ref HEAD)" ]; then
+		# git checkout "$most_recent_branch"
+		git checkout $most_recent_branch
 	else
-		switch_command+="$branch_name"
-	fi
-
-	if [ "$output_level" = all ]; then
-		echo "Switch command: $switch_command"
-		eval "$switch_command"
-		echo "Done"
-	else
-		eval "$switch_command" >/dev/null 2>&1
-	fi
-
-	if [ "$pull" = true ]; then
-		if [ "$output_level" = none ]; then
-			git pull >/dev/null 2>&1
-		else
-			git pull
-		fi
-	fi
-
-	if [ "$output_level" != none ]; then
-		# Output the repo name and branch name
-		printf "- %s\n" "$repo_name"
-		printf "-> %s\n\n" "$branch_name"
+		echo "Already on $most_recent_branch"
 	fi
 }
 
