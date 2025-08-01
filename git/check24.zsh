@@ -296,9 +296,24 @@ switch_to_master() {
 		run_command_in_repos "git checkout master"
 		return
 	fi
-
-	run_command_in_repos "git_sync master"
 }
+
+sync_all_with_master() {
+	# get current working directory
+	current_dir=$(pwd)
+
+	# Change to multi-repo_dir
+	cd "$MULTI_REPO_DIR" || return 1
+
+	# Sync all repos with the master branch
+	run_command_in_repos "git_sync master"
+	echo "Synced all repos with the master branch"
+
+	# Change back to the original directory
+	cd "$current_dir" || return 1
+}
+
+
 
 # 1. Checks out any branches that have the given issue number prefix
 # 2. Pulls changes from the remote branch
