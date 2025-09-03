@@ -259,7 +259,8 @@ sync_fork() {
 }
 
 # Searches all commits for a given pattern
-search_commits(search_pattern) {
+search_commits() {
+	search_pattern=$1
 	git log -S "$search_pattern" --pretty=format:"%h - %an, %ar : %s" | while read commit_info; do
     commit=$(echo $commit_info | cut -d' ' -f1)
     echo "=== $commit_info ==="
