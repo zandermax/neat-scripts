@@ -262,11 +262,12 @@ sync_fork() {
 search_commits() {
 	search_pattern=$1
 	git log -S "$search_pattern" --pretty=format:"%h - %an, %ar : %s" | while read commit_info; do
-    commit=$(echo $commit_info | cut -d' ' -f1)
-    echo "=== $commit_info ==="
-    git show $commit | awk '/^diff --git/ {file=$3; next} /^[+-].*'$search_pattern'/ {print file ":" $0}'
-    echo ""
-done
+		commit=$(echo $commit_info | cut -d' ' -f1)
+		echo "=== $commit_info ==="
+		git show $commit | awk '/^diff --git/ {file=$3; next} /^[+-].*'$search_pattern'/ {print file ":" $0}'
+		echo ""
+	done
+}
 
 #  Function aliases
 alias fix-commit='git_fix_last_commit'
