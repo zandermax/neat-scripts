@@ -5,7 +5,7 @@ merge_all_workspace_repos() {
 		return
 	fi
 
-	WORKSPACE_ROOT_DIR="$HOME/bu-repos-all/_workspaces_"
+	WORKSPACE_ROOT_DIR="$HOME/_workspaces_"
 	WORKSPACE_PREFIX="VERBU-"
 	WORKSPACE_FILE="$WORKSPACE_ROOT_DIR/$WORKSPACE_PREFIX$1".code-workspace
 

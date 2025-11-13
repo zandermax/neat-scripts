@@ -1,5 +1,5 @@
-MULTI_REPO_DIR=~/bu-repos-all
-WORKSPACES_DIR="$MULTI_REPO_DIR/__workspaces"
+MULTI_REPO_DIR=~
+WORKSPACES_DIR="$MULTI_REPO_DIR/_workspaces_"
 
 alias force_push="git push --force-with-lease"
 
@@ -121,7 +121,7 @@ update_all() {
 # Function to create or modify the workspace file
 workspace_file() {
 	full_issue_number="$1"
-	current_dir="$2"
+	project_dir="$2"
 	workspace_file="$WORKSPACES_DIR/$full_issue_number.code-workspace"
 
 	if [ ! -f "$workspace_file" ]; then
@@ -130,17 +130,17 @@ workspace_file() {
 		echo "{" >"$workspace_file"
 		echo '    "folders": [' >>"$workspace_file"
 		echo "        {" >>"$workspace_file"
-		echo "            \"name\": \"$current_dir\"," >>"$workspace_file"
-		echo "            \"path\": \"../$current_dir\"" >>"$workspace_file"
+		echo "            \"name\": \"$project_dir\"," >>"$workspace_file"
+		echo "            \"path\": \"$project_dir\"" >>"$workspace_file"
 		echo "        }" >>"$workspace_file"
 		echo "    ]" >>"$workspace_file"
 		echo "}" >>"$workspace_file"
 	else
-		echo "Adding $current_dir to workspace file $workspace_file"
-		if ! grep -q "\"path\": \"../$current_dir\"" "$workspace_file"; then
+		echo "Adding $project_dir to workspace file $workspace_file"
+		if ! grep -q "\"path\": \"$project_dir\"" "$workspace_file"; then
 		# TODO test this
 			# echo "        {" >>"$workspace_file"
-			# echo "            \"name\": \"$current_dir\"," >>"$workspace_file"
+			# echo "            \"name\": \"$project_dir\"," >>"$workspace_file"
 			# echo "            \"path\": \"../$current_dir\"" >>"$workspace_file"
 			# echo "        }," >>"$workspace_file"
 		else
@@ -206,12 +206,8 @@ issue_branch() {
 	echo "Creating branch $branch_name"
 	git checkout -b "$branch_name"
 
-	# Name of current directory, without the path
-	current_dir=$(basename "$(pwd)")
-
-
 	if [ "$no_ws_file" = false ]; then
-		workspace_file "$full_issue_number" "$current_dir"
+		workspace_file "$full_issue_number"
 	fi
 
 	# Open the workspace in VS Code

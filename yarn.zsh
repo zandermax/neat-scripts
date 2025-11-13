@@ -55,3 +55,5 @@ yarn_clean() {
 }
 
 alias yarn-reset="yarn clean && yb && yl && yt"
+alias test-it="yarn lint && yarn build && yarn test"
+alias test-and-push="test-it && git push"
