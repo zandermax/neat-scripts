@@ -3,13 +3,13 @@ WORKSPACES_DIR="$MULTI_REPO_DIR/_workspaces_"
 
 alias force_push="git push --force-with-lease"
 
-# Runs yarn switch-and-pull in bu-repos-retriever for the given issue number
+# Switches to the issue in bu-repos-retriever for the given issue number
 issue() {
 	if [ -z "$1" ]; then
 		echo "Usage: issue <issue_number>"
 		return 1
 	fi
-	(cd "${MULTI_REPO_DIR:h}" && yarn switch-and-pull "$1")
+	(cd "${MULTI_REPO_DIR:h}" && yarn switch-to-issue "$1")
 }
 
 # Pushes with checks for common caveats
@@ -30,7 +30,7 @@ push() {
 	)
 
 	while [ $# -gt 0 ]; do
-	# If --help or --? is any argument, use print_help to display the help message
+		# If --help or --? is any argument, use print_help to display the help message
 		if [[ "$1" == "--help" ]] || [[ "$1" == "-?" ]]; then
 			print_help_cmd="print_help push 'Push changes to the remote repository'"
 			for key in "${(@k)switch_to_command_and_description}"; do
@@ -90,7 +90,7 @@ push() {
 
 	# Check if there is an upstream branch being tracked
 	if ! git rev-parse --abbrev-ref --symbolic-full-name @{u} >/dev/null 2>&1; then
-	# [ ] TODO - test this
+		# [ ] TODO - test this
 		echo "No upstream branch found. Setting upstream to origin/$current_branch"
 		echo "git command: git push $additional_args --set-upstream origin \$(git rev-parse --abbrev-ref HEAD)"
 		git push "$additional_args" --set-upstream origin $(git rev-parse --abbrev-ref HEAD)
@@ -147,11 +147,7 @@ workspace_file() {
 	else
 		echo "Adding $project_dir to workspace file $workspace_file"
 		if ! grep -q "\"path\": \"$project_dir\"" "$workspace_file"; then
-		# TODO test this
-			# echo "        {" >>"$workspace_file"
-			# echo "            \"name\": \"$project_dir\"," >>"$workspace_file"
-			# echo "            \"path\": \"../$current_dir\"" >>"$workspace_file"
-			# echo "        }," >>"$workspace_file"
+
 		else
 			echo "Directory already in workspace file"
 		fi
@@ -318,8 +314,6 @@ sync_all_with_master() {
 	cd "$current_dir" || return 1
 }
 
-
-
 # 1. Checks out any branches that have the given issue number prefix
 # 2. Pulls changes from the remote branch
 # 3. Merges the remote branch into the local branch
@@ -344,7 +338,7 @@ open_issue() {
 	# Run the command and capture the output
 	cmd="checkout_branch_with_prefix $branch_prefix --pull --success-only"
 
-	run_command_in_repos  "$cmd"
+	run_command_in_repos "$cmd"
 
 	# Open the workspace in Cursor / VS Code
 	# check if cursor is installed
