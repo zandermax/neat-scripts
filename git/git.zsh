@@ -14,6 +14,8 @@ alias gp='git push'
 alias gpl='git pull'
 alias gpf='git push --force-with-lease'
 
+alias gfmom='git fetch origin && git merge origin/master'
+
 alias gsw='git switch'
 alias gs-='git switch -'
 
