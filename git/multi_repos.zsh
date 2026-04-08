@@ -30,9 +30,6 @@ run_command_in_repos() {
 	num_repos=$(for dir in */; do [ -d "$dir/.git" ] && echo "$dir"; done | wc -l)
 	repo_count=1
 
-	# loading_bar "$num_repos" "$repo_count" --width 100 --show-count
-	# my_loading_bar::start
-
 	local longest_repo_name=0
 	# Iterate over all directories in the current directory
 	for dir in */; do

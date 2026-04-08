@@ -1,7 +1,16 @@
-MULTI_REPO_DIR=~
+MULTI_REPO_DIR=~/bu-repos/bu-repos-retriever/repos
 WORKSPACES_DIR="$MULTI_REPO_DIR/_workspaces_"
 
 alias force_push="git push --force-with-lease"
+
+# Runs yarn switch-and-pull in bu-repos-retriever for the given issue number
+issue() {
+	if [ -z "$1" ]; then
+		echo "Usage: issue <issue_number>"
+		return 1
+	fi
+	(cd "${MULTI_REPO_DIR:h}" && yarn switch-and-pull "$1")
+}
 
 # Pushes with checks for common caveats
 #
